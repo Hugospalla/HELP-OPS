@@ -3,32 +3,54 @@ package Serveur;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.HashMap;
+import java.util.UUID;
 
 import interfaceRMI.Auth;
 
 public class AuthImpl extends UnicastRemoteObject implements Auth{
 
-	private HashMap<String, String> userBD = new HashMap<>();
+	//BD user 
+	private HashMap<String, User> userBD = new HashMap<>();
 	
+	// BD session active
+	private HashMap<String, User> activeSessions = new HashMap<>();
+	
+	//constructeur
 	public AuthImpl() throws RemoteException {
 		super();
-		userBD.put("Hugo", "test");
+		userBD.put("hugos", new User("hugoS", "test"));
+        userBD.put("julien", new User("julien", "test"));
+        userBD.put("hugol", new User("hugoL", "test"));
+        userBD.put("fabien", new User("fabien", "test"));
 	}
 	
 	@Override
-	public boolean authentification(String login, String password) throws RemoteException {
+	public String authentification(String login, String password) throws RemoteException {
 		
+		User user = userBD.get(login);
 		
-		if (userBD.containsKey(login)) {
-			String vraimdp = userBD.get(login);
-			if (vraimdp.equals(password)) {
-				System.out.println("CONNEXION REUSSIE");
-				return true;
+		if (user != null && user.getPassword().equals(password)) {
+			// génère le token
+			String token = UUID.randomUUID().toString();
+			System.out.println("Token généré pour l'utilisateur " + login);
+			
+			//Insertion du token dans la bd pour l'user
+			activeSessions.put(token, user);
+			
+			System.out.println("Auth >> Connexion réussie pour " + login);
+			return token;
 			}
-		}
-			System.out.println("CONNEXION ECHOUEE");
-			return false;
-		}
+		
+		System.out.println("Auth >> Echec connexion pour " + login);
+		return null;
+		
 	}
+	
+	@Override
+	public boolean vToken(String token) throws RemoteException {
+		
+		return activeSessions.containsKey(token);
+	}
+}
 	
 

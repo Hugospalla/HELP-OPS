@@ -8,7 +8,8 @@ import Serveur.User;
 
 public interface Auth extends java.rmi.Remote{
 
-	public boolean authentification(String login, String password) throws RemoteException;
-	
+	public String authentification(String login, String password) throws RemoteException;
+		
+	public boolean vToken(String token) throws RemoteException;
 	
 }
