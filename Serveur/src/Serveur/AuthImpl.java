@@ -32,16 +32,16 @@ public class AuthImpl extends UnicastRemoteObject implements Auth{
 		if (user != null && user.getPassword().equals(password)) {
 			// génère le token
 			String token = UUID.randomUUID().toString();
-			System.out.println("Token généré pour l'utilisateur " + login);
+			System.out.println("AUTH >>Token généré pour l'utilisateur " + login);
 			
 			//Insertion du token dans la bd pour l'user
 			activeSessions.put(token, user);
 			
-			System.out.println("Auth >> Connexion réussie pour " + login);
+			System.out.println("AUTH >> Connexion réussie pour " + login);
 			return token;
 			}
 		
-		System.out.println("Auth >> Echec connexion pour " + login);
+		System.out.println("AUTH >> Echec connexion pour " + login);
 		return null;
 		
 	}
