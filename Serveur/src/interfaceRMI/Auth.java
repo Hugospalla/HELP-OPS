@@ -12,4 +12,6 @@ public interface Auth extends java.rmi.Remote{
 		
 	public boolean vToken(String token) throws RemoteException;
 	
+	public String getLoginByToken(String token) throws RemoteException;
+	
 }

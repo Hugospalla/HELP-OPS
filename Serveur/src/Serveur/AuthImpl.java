@@ -32,7 +32,7 @@ public class AuthImpl extends UnicastRemoteObject implements Auth{
 		if (user != null && user.getPassword().equals(password)) {
 			// génère le token
 			String token = UUID.randomUUID().toString();
-			System.out.println("AUTH >>Token généré pour l'utilisateur " + login);
+			System.out.println("AUTH >> Token généré pour l'utilisateur " + login);
 			
 			//Insertion du token dans la bd pour l'user
 			activeSessions.put(token, user);
@@ -50,7 +50,19 @@ public class AuthImpl extends UnicastRemoteObject implements Auth{
 	public boolean vToken(String token) throws RemoteException {
 		
 		return activeSessions.containsKey(token);
+		
 	}
+	
+	@Override
+	public String getLoginByToken(String token) throws RemoteException {
+		 User utilisateurTrouve = activeSessions.get(token);
+		    
+		    if (utilisateurTrouve == null) {
+		        return null; 
+		    }
+		  
+		    return utilisateurTrouve.getLogin(); 
+		}
 }
 	
 
