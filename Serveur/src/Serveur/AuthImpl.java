@@ -41,6 +41,7 @@ public class AuthImpl extends UnicastRemoteObject implements Auth{
 			return token;
 			}
 		
+		
 		System.out.println("AUTH >> Echec connexion pour " + login);
 		return null;
 		

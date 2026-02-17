@@ -67,7 +67,7 @@ public class IncidentImpl extends UnicastRemoteObject implements Incidents{
 			
 			return ticketId;
 		}else {
-			System.out.println("INC >> Erreur lors de la création du ticket");
+			System.out.println("INC >> Impossible de créer le ticket pour " + auteur +  ", Session invalide");
 			return null;
 		}
 	}
