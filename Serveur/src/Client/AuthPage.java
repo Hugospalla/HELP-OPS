@@ -74,11 +74,12 @@ public class AuthPage implements ActionListener{
 		frame.add(mdpField);
 		frame.add(loginButton);
 		
+		
 		frame.getContentPane().setBackground(new Color(18, 18, 30));
-		frame.setLocationRelativeTo(null);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setTitle("HELP'OPS");
 		frame.setSize(500,450);
+		frame.setLocationRelativeTo(null);
 		frame.setLayout(null);
 		frame.setVisible(true);
 	}
@@ -115,7 +116,12 @@ public class AuthPage implements ActionListener{
 					messageLabel.setForeground(Color.green);
 					messageLabel.setText("Connecté avec succès");
 					frame.dispose();
-					MenuPage menuPage = new MenuPage();
+					try {
+						MenuPage menuPage = new MenuPage();
+					} catch (MalformedURLException | RemoteException | NotBoundException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
 				} else {
 					messageLabel.setForeground(Color.red);
 					messageLabel.setText("Login ou mdp incorect");
