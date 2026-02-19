@@ -1,9 +1,9 @@
-package interfaceRMI;
+package commons.interfaces;
 
 import java.rmi.RemoteException;
 import java.util.List;
 
-import Serveur.Incident;
+import commons.modele.Incident;
 
 
 public interface Incidents extends java.rmi.Remote{

@@ -1,7 +1,7 @@
-package Serveur;
+package commons.modele;
 
 import java.io.Serializable;
-import java.util.UUID;
+
 
 public class Incident implements Serializable{
 

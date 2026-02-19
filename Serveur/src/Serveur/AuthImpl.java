@@ -5,7 +5,8 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.HashMap;
 import java.util.UUID;
 
-import interfaceRMI.Auth;
+import commons.interfaces.Auth;
+import commons.modele.User;
 
 public class AuthImpl extends UnicastRemoteObject implements Auth{
 

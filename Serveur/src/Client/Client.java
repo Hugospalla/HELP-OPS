@@ -7,9 +7,9 @@ import java.rmi.RemoteException;
 import java.util.List;
 import java.util.Scanner;
 
-import Serveur.Incident;
-import interfaceRMI.Auth;
-import interfaceRMI.Incidents;
+import commons.interfaces.Auth;
+import commons.interfaces.Incidents;
+import commons.modele.Incident;
 
 public class Client {
 	

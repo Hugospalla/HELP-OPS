@@ -13,8 +13,9 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import interfaceRMI.Auth;
-import interfaceRMI.Incidents;
+import commons.interfaces.Auth;
+import commons.interfaces.Incidents;
+import commons.modele.Incident;
 
 public class IncidentImpl extends UnicastRemoteObject implements Incidents{
 

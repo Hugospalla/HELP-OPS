@@ -23,11 +23,21 @@ public class Serveur {
 		
 		IncidentImpl inc = new IncidentImpl();
 		
-		Naming.rebind(AuthService, auth);
-		System.out.println("INIT >> Service d'authentification démarré");
+		try {
+			Naming.rebind(AuthService, auth);
+			System.out.println("INIT >> Service d'authentification démarré");
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
-		Naming.rebind(IncidentService, inc);
-		System.out.println("INIT >> Service d'incident démarré");
+		try {
+			Naming.rebind(IncidentService, inc);
+			System.out.println("INIT >> Service d'incident démarré");
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
 		
 	} catch (Exception e) {
