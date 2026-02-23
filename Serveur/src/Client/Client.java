@@ -18,7 +18,7 @@ public class Client {
 
     public static void main(String[] args) {
         try {
-            // 1. Connexion aux services RMI
+            
             IAuthService authService = (IAuthService) Naming.lookup("rmi://localhost:1099/AuthService");
             IIncidentService incidentService = (IIncidentService) Naming.lookup("rmi://localhost:1099/IncidentService");
             
@@ -28,7 +28,7 @@ public class Client {
             System.out.println("   BIENVENUE SUR HELP'OPS   ");
             System.out.println("===============================");
             
-            // --- 2. BOUCLE D'AUTHENTIFICATION ---
+           
             while (monToken == null) {
                 System.out.print("Entrez votre login : ");
                 String login = sc.nextLine();
@@ -37,7 +37,7 @@ public class Client {
                 String password = sc.nextLine();
             
                 try {
-                    // Si ça rate, le serveur jette une exception qu'on attrape plus bas
+                    
                     AuthResponse reponseAuth = authService.seConnecter(login, password);
                     monToken = reponseAuth.getToken();
                     monLogin = reponseAuth.getLogin();
@@ -47,7 +47,7 @@ public class Client {
                 }
             }
             
-            // --- 3. BOUCLE DU MENU PRINCIPAL ---
+           
             boolean continuer = true;
             while (continuer) {
                 System.out.println("\n--- MENU PRINCIPAL ---");
@@ -58,11 +58,11 @@ public class Client {
                 
                 int res = -1;
                 try {
-                    // Lecture 100% sécurisée : on lit le texte et on le transforme en chiffre
+                    
                     res = Integer.parseInt(sc.nextLine()); 
                 } catch (NumberFormatException e) {
                     System.out.println(">> Erreur : Veuillez entrer un chiffre valide !");
-                    continue; // Annule ce tour et réaffiche le menu
+                    continue; 
                 }
                 
                 switch(res) {
@@ -72,7 +72,7 @@ public class Client {
                         String titre = sc.nextLine();
                         
                         Categorie[] lesCategories = Categorie.values();
-                        Categorie categorieChoix = null; // Reste null tant que le choix n'est pas bon
+                        Categorie categorieChoix = null; 
                         
                         while (categorieChoix == null) {
                             System.out.println("\nCatégories disponibles :");
@@ -84,15 +84,15 @@ public class Client {
                             try {
                                 int choix = Integer.parseInt(sc.nextLine()); 
                                 
-                                // On vérifie si le chiffre correspond bien à une catégorie existante
+                                
                                 if (choix >= 0 && choix < lesCategories.length) {
-                                    categorieChoix = lesCategories[choix]; // Choix valide, ça cassera la boucle !
+                                    categorieChoix = lesCategories[choix]; 
                                 } else {
                                     System.out.println(">> Erreur : Numéro hors limite. Veuillez choisir un numéro de la liste.");
                                 }
                                 
                             } catch (NumberFormatException e) {
-                                // S'il tape "caca" ou du texte
+                                
                                 System.out.println(">> Erreur : Veuillez entrer uniquement un chiffre.");
                             }
                         }
@@ -139,7 +139,7 @@ public class Client {
             
         } catch (Exception e) {
             System.err.println("ERREUR CRITIQUE DE CONNEXION AU SERVEUR : " + e.getMessage());
-            e.printStackTrace(); // Affiche les détails techniques si le serveur est vraiment éteint
+            e.printStackTrace(); 
         }
     }      
 }
