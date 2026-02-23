@@ -5,66 +5,49 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.HashMap;
 import java.util.UUID;
 
-import commons.interfaces.Auth;
+import Serveur.dao.IUserDao;
+import Serveur.session.ISessionManager;
+import commons.interfaces.IAuthService;
+import commons.modele.AuthResponse;
 import commons.modele.User;
 
-public class AuthImpl extends UnicastRemoteObject implements Auth{
+public class AuthImpl extends UnicastRemoteObject implements IAuthService{
 
-	//BD user 
-	private HashMap<String, User> userBD = new HashMap<>();
+	private IUserDao userDao;
+	private ISessionManager sessionManager;
 	
-	// BD session active
-	private HashMap<String, User> activeSessions = new HashMap<>();
-	
-	//constructeur
-	public AuthImpl() throws RemoteException {
+	public AuthImpl(IUserDao userDao, ISessionManager sessionManager) throws RemoteException {
 		super();
-		userBD.put("hugos", new User("hugoS", "test"));
-        userBD.put("julien", new User("julien", "test"));
-        userBD.put("hugol", new User("hugoL", "test"));
-        userBD.put("fabien", new User("fabien", "test"));
+		this.userDao = userDao;
+		this.sessionManager = sessionManager;
 	}
 	
 	@Override
-	public String authentification(String login, String password) throws RemoteException {
-		
-		User user = userBD.get(login);
+	public AuthResponse seConnecter(String login, String password) throws RemoteException {
+		User user = userDao.getUserByLogin(login);
 		
 		if (user != null && user.getPassword().equals(password)) {
-			// génère le token
 			String token = UUID.randomUUID().toString();
-			System.out.println("AUTH >> Token généré pour l'utilisateur " + login);
+			sessionManager.createSession(token, user);
 			
-			//Insertion du token dans la bd pour l'user
-			activeSessions.put(token, user);
-			
-			System.out.println("AUTH >> Connexion réussie pour " + login);
-			return token;
-			}
-		
+			System.out.println("AUTH >> Connexion réussi pour " + login);
+			return new AuthResponse(token, user.getLogin());
+		}
 		
 		System.out.println("AUTH >> Echec connexion pour " + login);
-		return null;
-		
+		throw new RemoteException("Identifiant ou mote de passe incorrect");
 	}
 	
 	@Override
-	public boolean vToken(String token) throws RemoteException {
-		
-		return activeSessions.containsKey(token);
-		
+	public boolean isTokenValid(String token) throws RemoteException {
+		return sessionManager.isSessionValid(token);
 	}
 	
-	@Override
-	public String getLoginByToken(String token) throws RemoteException {
-		 User utilisateurTrouve = activeSessions.get(token);
-		    
-		    if (utilisateurTrouve == null) {
-		        return null; 
-		    }
-		  
-		    return utilisateurTrouve.getLogin(); 
-		}
+	@Override 
+	public String getLoginByToken(String token) throws RemoteException{
+		User u = sessionManager.getUserByToken(token);
+		return (u !=null) ? u.getLogin(): null;
+	}
 }
 	
 

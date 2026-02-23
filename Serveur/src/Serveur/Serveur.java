@@ -5,6 +5,13 @@ import java.rmi.Naming;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 
+import Serveur.dao.IIncidentDao;
+import Serveur.dao.IUserDao;
+import Serveur.dao.InMemoryIncidentDao;
+import Serveur.dao.InMemoryUserDao;
+import Serveur.session.ISessionManager;
+import Serveur.session.InMemorySessionManager;
+
 public class Serveur {
 	
 	private static int port = 1099;
@@ -13,36 +20,29 @@ public class Serveur {
 	
 	public static void main(String[] args) throws RemoteException, MalformedURLException{
 		
-	try {
-		
-	
-		LocateRegistry.createRegistry(port);
-		System.out.println("INIT >> Serveur écoute sur le port " + port);
-		
-		AuthImpl auth = new AuthImpl();
-		
-		IncidentImpl inc = new IncidentImpl();
-		
 		try {
+			LocateRegistry.createRegistry(port);
+			System.out.println("INIT >> Serveur écoute sur le port " + port);
+			
+			IUserDao dao = new InMemoryUserDao();
+			ISessionManager sessionManager = new InMemorySessionManager();
+			IIncidentDao incidentDao = new InMemoryIncidentDao();
+			
+			AuthImpl auth = new AuthImpl(dao, sessionManager);
+			IncidentImpl inc = new IncidentImpl(incidentDao);
+			
 			Naming.rebind(AuthService, auth);
 			System.out.println("INIT >> Service d'authentification démarré");
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		try {
+			
 			Naming.rebind(IncidentService, inc);
 			System.out.println("INIT >> Service d'incident démarré");
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		
-	} catch (Exception e) {
-		System.err.println("Erreur : " + e.getMessage());
-		e.printStackTrace();
-	}
 
-}}
+			
+			
+		} catch (Exception e) {
+			System.err.println("Erreur : " + e.getMessage());
+            e.printStackTrace();
+		}
+	}
+	
+}
