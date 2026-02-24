@@ -1,17 +1,19 @@
-package Serveur;
+package commons.modele;
 
 import java.io.Serializable;
-import java.util.UUID;
+
 
 public class Incident implements Serializable{
 
-	private String categorie;
+	private String id;
+	private Categorie categorie;
 	private String titre;
 	private String desc;
 	private String etat;
 	private String auteur;
 	
-	public Incident(String categorie, String titre, String desc, String etat, String auteur) {
+	public Incident(String id, Categorie categorie, String titre, String desc, String auteur) {
+		this.id = id;
 		this.categorie = categorie;
 		this.titre = titre;
 		this.desc = desc;
@@ -19,7 +21,11 @@ public class Incident implements Serializable{
 		this.etat = "OPEN";
 	}
 	
-	public String getCategorie() {
+	public String getId() {
+		return id;
+	}
+	
+	public Categorie getCategorie() {
 		return categorie;
 	}
 	
@@ -40,7 +46,7 @@ public class Incident implements Serializable{
 	}
 	
 	@Override
-	public String toString() {
-		return "Ticket [" + this.titre + "] : " + this.categorie + " (" + this.etat + ") - Auteur: " + this.auteur;
-	}
+    public String toString() {
+        return "[" + this.id.substring(0, 8) + "...] " + this.titre + " | Cat: " + this.categorie + " | Etat: " + this.etat + " | Auteur: " + this.auteur;
+    }
 }

@@ -6,5 +6,7 @@
  */
 module Serveur {
 	requires java.rmi;
-	exports interfaceRMI;
+	requires java.desktop;
+	exports commons.interfaces;
+	exports commons.modele;
 }

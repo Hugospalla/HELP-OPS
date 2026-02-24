@@ -1,115 +1,80 @@
 package Serveur;
 
-
-import java.net.MalformedURLException;
+import java.util.List;
 import java.rmi.Naming;
-import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
-import interfaceRMI.Auth;
-import interfaceRMI.Incidents;
+import Serveur.dao.IIncidentDao;
+import commons.interfaces.IAuthService;
+import commons.interfaces.IIncidentService;
+import commons.modele.Categorie;
+import commons.modele.Incident;
 
-public class IncidentImpl extends UnicastRemoteObject implements Incidents{
+public class IncidentImpl extends UnicastRemoteObject implements IIncidentService{
 
-	//BD Incident
-	private HashMap<String, Incident> incidentbd = new HashMap<>();
+	private IIncidentDao incidentDao;
 	
-	
-	public IncidentImpl() throws RemoteException, MalformedURLException, NotBoundException, InterruptedException {
+	public IncidentImpl(IIncidentDao incidentDao) throws RemoteException {
 		super();
+		this.incidentDao = incidentDao;
 	}
 	
-	private Auth getAuth() {
-		try { 
-			return (Auth) Naming.lookup("rmi://localhost:1099/AuthService");
-		} catch (Exception e ) {
+	private IAuthService getAuth() {
+		try {
+			return(IAuthService) Naming.lookup("rmi://localhost:1099/AuthService");
+		} catch (Exception e) {
 			System.err.println("INC >> Impossible de se connecter au service d'authentification");
 			return null;
 		}
 	}
 	
 	@Override
-	public String creationInc(String token, String categorie, String titre, String desc, String etat, String auteur) throws RemoteException{
+	public Incident creerIncident(String token, Categorie categorie, String titre, String desc) throws RemoteException {
 		
-		Auth auth = getAuth();
+		IAuthService auth = getAuth();
+		if (auth == null) throw new RemoteException("Service d'authentification indisponible");
 		
-		if (auth == null) {
-			throw new RemoteException("Service d'authentification indisponible");
-		}
-		
-		if(auth.vToken(token) == true) {
-			
-			String ticketId = UUID.randomUUID().toString();
+		if(auth.isTokenValid(token)) {
 			
 			String ticketAuteur = auth.getLoginByToken(token);
-			String ticketEtat = "OPEN";
+			String ticketId = UUID.randomUUID().toString();
 			
-			Incident ticket = new Incident(categorie, titre, desc, ticketEtat, ticketAuteur);
+			Incident ticket = new Incident(ticketId, categorie, titre, desc, ticketAuteur);
 			
-			incidentbd.put(ticketId, ticket);
-			System.out.println("INC >> Creation d'un ticket pour : " + ticketAuteur);
-			System.out.println("> ID ticket : " + ticketId);
-			System.out.println("> Titre : " + titre);
-			System.out.println("> Catégorie : " + categorie);
-			System.out.println("> Description : " + categorie);
-			System.out.println("> Auteur : " + ticketAuteur);
-			System.out.println("> Auteur token : " + token);
-			System.out.println("> Etat : " + ticketEtat);
+			incidentDao.save(ticket);
 			
-			
-			
-			return ticketId;
-		}else {
-			System.out.println("INC >> Erreur lors de la création du ticket");
-			return null;
+			System.out.println("INC >> Creation d'un ticket [" + ticketId.substring(0,8) + "] pour : " + ticketAuteur);
+			return ticket;
+		} else {
+			System.out.println("INC >> Session invalide, impossible de créer le ticket.");
+			throw new RemoteException("Votre session est invalide ou a expiré. Veuillez vous reconnecter");
 		}
 	}
 	
-	
 	@Override
-	public List<Incident> mesIncidents(String token) throws RemoteException {
+	public List<Incident> getMesIncidents(String token) throws RemoteException {
 		
-		Auth auth = getAuth();
+		IAuthService auth = getAuth();
+		if (auth == null) throw new RemoteException("Service d'authentification indisponible");
 		
-		if (auth == null) {
-			throw new RemoteException("Service d'authentification indisponible");
-		}
-		
-		
-		
-		if(auth.vToken(token) == true) {
-			
+		if (auth.isTokenValid(token)) {
 			String demandeur = auth.getLoginByToken(token);
 			
-			List<Incident> res = new ArrayList<>();
-			
-			for (Incident ticket : incidentbd.values()) {
-				if (ticket.getAuteur().equals(demandeur)) {
-					res.add(ticket);
-				}
-			}
+			List<Incident> res = incidentDao.getIncidentsByAuteur(demandeur);
 			
 			if (res.isEmpty()) {
 				System.out.println("INC >> Aucun ticket trouvé pour " + demandeur);
 				return null;
 			}
-			
-			
 			return res;
-		}else {
-			System.out.println("INC >> Erreur lors de la création du ticket");
-			return null;
+		} else {
+			System.out.println("INC >> Session invalide lors de la consultation.");
+			throw new RemoteException("Votre session est invalide ou a expiré. Veuillez vous reconnecter");
 		}
-		
-		
 	}
+	
 }
 	
 
