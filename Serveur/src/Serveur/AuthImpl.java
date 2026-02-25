@@ -2,7 +2,6 @@ package Serveur;
 
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
-import java.util.HashMap;
 import java.util.UUID;
 
 import Serveur.dao.IUserDao;
