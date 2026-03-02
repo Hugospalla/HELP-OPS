@@ -1,16 +1,16 @@
 package Serveur;
 
+import Serveur.dao.DatabaseManager;
+import Serveur.dao.IIncidentDao;
+import Serveur.dao.IUserDao;
+import Serveur.dao.JdbcIncidentDao;
+import Serveur.dao.JdbcUserDao;
+import Serveur.session.ISessionManager;
+import Serveur.session.InMemorySessionManager;
 import java.net.MalformedURLException;
 import java.rmi.Naming;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
-
-import Serveur.dao.IIncidentDao;
-import Serveur.dao.IUserDao;
-import Serveur.dao.InMemoryIncidentDao;
-import Serveur.dao.InMemoryUserDao;
-import Serveur.session.ISessionManager;
-import Serveur.session.InMemorySessionManager;
 
 public class Serveur {
 	
@@ -21,12 +21,17 @@ public class Serveur {
 	public static void main(String[] args) throws RemoteException, MalformedURLException{
 		
 		try {
+			// 1. Initialisation de la base de données SQLite
+			DatabaseManager.initDatabase();
+
+			// 2. Démarrage du registre RMI
 			LocateRegistry.createRegistry(port);
 			System.out.println("INIT >> Serveur écoute sur le port " + port);
 			
-			IUserDao dao = new InMemoryUserDao();
-			ISessionManager sessionManager = new InMemorySessionManager();
-			IIncidentDao incidentDao = new InMemoryIncidentDao();
+			// 3. Utilisation des NOUVEAUX DAO JDBC
+			IUserDao dao = new JdbcUserDao();
+			ISessionManager sessionManager = new InMemorySessionManager(); // On garde la session en RAM
+			IIncidentDao incidentDao = new JdbcIncidentDao();
 			
 			AuthImpl auth = new AuthImpl(dao, sessionManager);
 			IncidentImpl inc = new IncidentImpl(incidentDao);
@@ -37,12 +42,9 @@ public class Serveur {
 			Naming.rebind(IncidentService, inc);
 			System.out.println("INIT >> Service d'incident démarré");
 
-			
-			
 		} catch (Exception e) {
 			System.err.println("Erreur : " + e.getMessage());
             e.printStackTrace();
 		}
 	}
-	
 }
