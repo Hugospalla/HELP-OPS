@@ -180,7 +180,7 @@ public class Client {
                 
                 for (int i = 0; i < dernieresRecherches.size(); i++) {
                     Incident t = dernieresRecherches.get(i);
-                    System.out.println(i + " -> [" + t.getEtat() + "] " + t.getTitre());
+                    System.out.println(i + " -> [" + t.getId() + "] " + t.getTitre() + " | Etat: " + t.getEtat());
                 }
                 
                 System.out.print("\nEntrez le NUMÉRO du ticket pour voir les détails (ou 'q' pour annuler) : ");
