@@ -9,6 +9,8 @@ public interface IIncidentDao {
 	void save(Incident incident);
 	
 	List<Incident> getIncidentsByAuteur(String auteur);
+	
 	Incident getIncidentsById(String id);
 	
+	List<Incident> getAllIncidents();
 }

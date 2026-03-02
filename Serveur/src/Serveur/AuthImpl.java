@@ -8,6 +8,7 @@ import Serveur.dao.IUserDao;
 import Serveur.session.ISessionManager;
 import commons.interfaces.IAuthService;
 import commons.modele.AuthResponse;
+import commons.modele.Role;
 import commons.modele.User;
 
 public class AuthImpl extends UnicastRemoteObject implements IAuthService{
@@ -29,8 +30,8 @@ public class AuthImpl extends UnicastRemoteObject implements IAuthService{
 			String token = UUID.randomUUID().toString();
 			sessionManager.createSession(token, user);
 			
-			System.out.println("AUTH >> Connexion réussi pour " + login);
-			return new AuthResponse(token, user.getLogin());
+			System.out.println("AUTH >> Connexion réussi pour " + login + " Role: " + user.getRole());
+			return new AuthResponse(token, user.getLogin(), user.getRole());
 		}
 		
 		System.out.println("AUTH >> Echec connexion pour " + login);
@@ -46,6 +47,14 @@ public class AuthImpl extends UnicastRemoteObject implements IAuthService{
 	public String getLoginByToken(String token) throws RemoteException{
 		User u = sessionManager.getUserByToken(token);
 		return (u !=null) ? u.getLogin(): null;
+	}
+	
+	public Role getRoleByToken(String token) throws RemoteException{
+		User u = sessionManager.getUserByToken(token);
+		if (u != null) {
+			return u.getRole();
+		}
+		return null;
 	}
 }
 	

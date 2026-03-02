@@ -31,4 +31,9 @@ public class InMemoryIncidentDao implements IIncidentDao{
 	public Incident getIncidentsById(String id) {
 		return incidentbd.get(id);
 	}
+	
+	@Override
+	public List <Incident> getAllIncidents() {
+		return new ArrayList<>(incidentbd.values());
+	}
 }
