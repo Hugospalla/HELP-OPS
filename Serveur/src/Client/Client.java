@@ -17,10 +17,11 @@ public class Client {
     private static String monToken = null;
     private static String monLogin = null;
     private static Role monRole = null;
+    
+    private static List<Incident> dernieresRecherches = null; 
 
     public static void main(String[] args) {
         try {
-            
             IAuthService authService = (IAuthService) Naming.lookup("rmi://localhost:1099/AuthService");
             IIncidentService incidentService = (IIncidentService) Naming.lookup("rmi://localhost:1099/IncidentService");
             
@@ -30,7 +31,6 @@ public class Client {
             System.out.println("   BIENVENUE SUR HELP'OPS   ");
             System.out.println("===============================");
             
-            
             while (monToken == null) {
                 System.out.print("Entrez votre login : ");
                 String login = sc.nextLine();
@@ -39,31 +39,31 @@ public class Client {
                 String password = sc.nextLine();
             
                 try {
-                    
                     AuthResponse reponseAuth = authService.seConnecter(login, password);
                     monToken = reponseAuth.getToken();
                     monLogin = reponseAuth.getLogin();
                     monRole = reponseAuth.getRole();
-                    System.out.println("\n>>> Connexion réussie ! Bonjour " + monLogin + " <<<");
+                    System.out.println("\n>>> Connexion réussie ! Bonjour " + monLogin + " (Rôle: " + monRole + ") <<<");
                 } catch (RemoteException e) {
                     System.out.println(">>> Erreur : " + e.getMessage() + "\n");
                 }
             }
             
-            
             boolean continuer = true;
             while (continuer) {
                 if (monRole == Role.UTILISATEUR) {
-                    System.out.println("\n--- MENU PRINCIPAL ---");
+                    System.out.println("\n--- MENU UTILISATEUR ---");
                     System.out.println("1. Créer un nouveau ticket");
                     System.out.println("2. Consulter mes tickets");
                     System.out.println("3. Quitter");
                     System.out.print("Votre choix : ");
                 } else if (monRole == Role.AGENT) {
                     System.out.println("\n--- MENU AGENT ---");
-                    System.out.println("1. Consulter tous les tickets");
-                    System.out.println("2. Quitter");
-                    System.out.print("Votre choix : "); // Ajout pour l'agent
+                    System.out.println("1. Lister les tickets en attente (OPEN)");
+                    System.out.println("2. Prendre en charge un ticket");
+                    System.out.println("3. Voir mes tickets en cours (ASSIGNED)");
+                    System.out.println("4. Quitter");
+                    System.out.print("Votre choix : "); 
                 }
                 
                 int res = -1;
@@ -93,16 +93,13 @@ public class Client {
                                 System.out.print("Numéro de la catégorie : ");
                                 try {
                                     int choix = Integer.parseInt(sc.nextLine()); 
-                                
                                     if (choix >= 0 && choix < lesCategories.length) {
                                         categorieChoix = lesCategories[choix]; 
                                     } else {
-                                        System.out.println(">> Erreur : Numéro hors limite. Veuillez choisir un numéro de la liste.");
+                                        System.out.println(">> Erreur : Numéro hors limite.");
                                     }
-                                
                                 } catch (NumberFormatException e) {
-                                
-                                    System.out.println(">> Erreur : Veuillez entrer uniquement un chiffre.");
+                                    System.out.println(">> Erreur : Veuillez entrer un chiffre.");
                                 }
                             }
                         
@@ -116,24 +113,22 @@ public class Client {
                                 System.out.println(">> Erreur : " + e.getMessage());
                             }
                         } 
-                        // --- CODE COMPLÉTÉ POUR L'AGENT ---
                         else if (monRole == Role.AGENT) {
-                            System.out.println("\n[ LISTE DE TOUS LES TICKETS ]");
+                            System.out.println("\n[ LISTE DES TICKETS EN ATTENTE (OPEN) ]");
                             try {
-                                List<Incident> tousLesTickets = incidentService.getToutLesIncidents(monToken);
+                                dernieresRecherches = incidentService.getIncidentsOpen(monToken);
                                 
-                                if (tousLesTickets == null || tousLesTickets.isEmpty()) {
-                                    System.out.println(">> Aucun ticket dans le système.");
+                                if (dernieresRecherches == null || dernieresRecherches.isEmpty()) {
+                                    System.out.println(">> Aucun ticket en attente.");
                                 } else {
-                                    for (Incident t : tousLesTickets) {
-                                        System.out.println(t.toString());
+                                    for (int i = 0; i < dernieresRecherches.size(); i++) {
+                                        System.out.println(i + " -> " + dernieresRecherches.get(i).toString());
                                     }
                                 }
                             } catch (RemoteException e) {
                                 System.out.println(">> Erreur : " + e.getMessage());
                             }
                         }
-                        // Le break doit être ici pour fermer le case 1 complètement !
                         break; 
 
                     case 2:
@@ -154,16 +149,60 @@ public class Client {
                                 System.out.println(">> Erreur : " + e.getMessage());
                             }
                         } 
-                        // L'agent veut quitter (Choix 2 du menu Agent)
                         else if (monRole == Role.AGENT) {
-                            System.out.println("Déconnexion... Au revoir " + monLogin + " !");
-                            continuer = false;
+                            System.out.println("\n[ PRENDRE EN CHARGE UN TICKET ]");
+                            
+                            if (dernieresRecherches == null || dernieresRecherches.isEmpty()) {
+                                System.out.println(">> Veuillez d'abord lister les tickets (Choix 1) pour voir les numéros.");
+                            } else {
+                                System.out.print("Entrez le NUMÉRO du ticket (ex: 0, 1...) : ");
+                                try {
+                                    int choixNum = Integer.parseInt(sc.nextLine());
+                                    
+                                    if (choixNum >= 0 && choixNum < dernieresRecherches.size()) {
+                                        String idTicketVise = dernieresRecherches.get(choixNum).getId();
+                                        
+                                        incidentService.prendreEnChargeTicket(monToken, idTicketVise);
+                                        System.out.println(">> Succès ! Vous avez été assigné au ticket de manière exclusive.");
+                                        
+                                        dernieresRecherches = null; 
+                                    } else {
+                                        System.out.println(">> Erreur : Ce numéro n'est pas dans la liste.");
+                                    }
+                                } catch (NumberFormatException e) {
+                                    System.out.println(">> Erreur : Veuillez entrer un chiffre valide.");
+                                } catch (RemoteException e) {
+                                    System.out.println(">> Erreur serveur : " + e.getMessage());
+                                }
+                            }
                         }
                         break;
                         
                     case 3:
-                        // L'utilisateur veut quitter (Choix 3 du menu Utilisateur)
                         if (monRole == Role.UTILISATEUR) {
+                            System.out.println("Déconnexion... Au revoir " + monLogin + " !");
+                            continuer = false;
+                        } 
+                        else if (monRole == Role.AGENT) {
+                            System.out.println("\n[ MES TICKETS EN COURS (ASSIGNED) ]");
+                            try {
+                                List<Incident> mesAssignes = incidentService.getMesIncidentsAssigned(monToken);
+                                
+                                if (mesAssignes == null || mesAssignes.isEmpty()) {
+                                    System.out.println(">> Vous n'avez aucun ticket en charge pour le moment.");
+                                } else {
+                                    for (Incident t : mesAssignes) {
+                                        System.out.println(t.toString());
+                                    }
+                                }
+                            } catch (RemoteException e) {
+                                System.out.println(">> Erreur : " + e.getMessage());
+                            }
+                        }
+                        break;
+                        
+                    case 4:
+                        if (monRole == Role.AGENT) {
                             System.out.println("Déconnexion... Au revoir " + monLogin + " !");
                             continuer = false;
                         } else {

@@ -15,6 +15,7 @@ public class InMemoryUserDao implements IUserDao {
         userBD.put("hugol", new User("hugol", "test", Role.UTILISATEUR));
         userBD.put("fabien", new User("fabien", "test", Role.UTILISATEUR));
         userBD.put("admin", new User("admin", "test", Role.AGENT));
+        userBD.put("admin2", new User("admin2", "test", Role.AGENT));
 	}
 	
 	@Override

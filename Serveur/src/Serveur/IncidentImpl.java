@@ -1,15 +1,18 @@
 package Serveur;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.rmi.Naming;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import Serveur.dao.IIncidentDao;
 import commons.interfaces.IAuthService;
 import commons.interfaces.IIncidentService;
 import commons.modele.Categorie;
+import commons.modele.Etat;
 import commons.modele.Incident;
 import commons.modele.Role;
 
@@ -89,7 +92,7 @@ public class IncidentImpl extends UnicastRemoteObject implements IIncidentServic
 	}
 	
 	@Override
-	public List<Incident> getToutLesIncidents(String token) throws RemoteException{
+	public List<Incident> getMesIncidentsAssigned(String token) throws RemoteException{
 		
 		IAuthService auth = getAuth();
 		if (auth == null) throw new RemoteException("Service d'authentification indisponible");
@@ -102,11 +105,88 @@ public class IncidentImpl extends UnicastRemoteObject implements IIncidentServic
 				throw new RemoteException("Accès refusé : Seul un agent a le droit d'afficher tous les tickets");
 			}
 			
-			return incidentDao.getAllIncidents();
+			String nomAgent = auth.getLoginByToken(token);
+			
+			List<Incident> tous = incidentDao.getAllIncidents();
+			List<Incident> mesAssigned = new ArrayList<>();
+			
+			for (Incident inc : tous) {
+				if (inc.getEtat() == Etat.ASSIGNED && nomAgent.equals(inc.getAgentId())) {
+					mesAssigned.add(inc);
+				}
+			}
+			return mesAssigned;
 			
 		} else {
 			throw new RemoteException("Session invalide ou expiré");
 		}
+	}
+	
+	@Override
+	public List<Incident> getIncidentsOpen(String token) throws RemoteException{
+		
+		IAuthService auth = getAuth();
+		if (auth == null) throw new RemoteException("Service d'authentification indisponible");
+		
+		if (auth.isTokenValid(token)) {
+			
+			Role roleDemandeur = auth.getRoleByToken(token);
+			
+			if (roleDemandeur != Role.AGENT) {
+				throw new RemoteException("Accès refusé : Seul un agent a le droit d'afficher tous les tickets");
+			}
+			
+			List<Incident> tous = incidentDao.getAllIncidents();
+			List<Incident> ouverts = new ArrayList<>();
+			
+			for (Incident inc: tous) {
+				if (inc.getEtat() == Etat.OPEN) {
+					ouverts.add(inc);
+				}
+			} 
+			
+			return ouverts;
+			
+		} else {
+			throw new RemoteException("Session invalide ou expiré");
+		}
+	}
+	
+
+	
+	@Override
+	public synchronized void prendreEnChargeTicket(String token, String idTicket) throws RemoteException{
+		
+		IAuthService auth = getAuth();
+		if (auth == null) throw new RemoteException("Service d'authentification indisponible");
+		
+		if (auth.isTokenValid(token)) {
+			Role roleDemandeur = auth.getRoleByToken(token);
+			
+			if (roleDemandeur != Role.AGENT) {
+				throw new RemoteException("Accès refusé : Seul un agent a le droit d'afficher tous les tickets");
+			}
+			
+			Incident ticket = incidentDao.getIncidentsById(idTicket);
+			if (ticket == null) {
+				throw new RemoteException("Erreur: le ticket '" + idTicket + "' n'existe pas");
+			}
+			
+			if (ticket.getEtat() != Etat.OPEN) {
+				throw new RemoteException("Ce ticket ne peut pas être pris");
+			}
+			
+			ticket.setAgentId(auth.getLoginByToken(token));
+			ticket.setDateAssignation(LocalDateTime.now());
+			ticket.setEtat(Etat.ASSIGNED);
+			
+			
+			incidentDao.save(ticket);
+			System.out.println("INC >> Ticket : " + idTicket + "assigné à " + ticket.getAgentId());
+		} else {
+			throw new RemoteException("Session invalide ou expirée");
+		}
+		
 	}
 	
 }
