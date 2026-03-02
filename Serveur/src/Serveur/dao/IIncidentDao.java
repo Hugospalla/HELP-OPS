@@ -13,4 +13,5 @@ public interface IIncidentDao {
 	Incident getIncidentsById(String id);
 	
 	List<Incident> getAllIncidents();
+	
 }

@@ -11,9 +11,11 @@ public class Incident implements Serializable{
 	private Categorie categorie;
 	private String titre;
 	private String desc;
-	private String etat;
+	private Etat etat;
+	private String agentId;
 	private String auteur;
 	private LocalDateTime dateCreation;
+	private LocalDateTime dateAssignation;
 	
 	public Incident(String id, Categorie categorie, String titre, String desc, String auteur) {
 		this.id = id;
@@ -21,7 +23,9 @@ public class Incident implements Serializable{
 		this.titre = titre;
 		this.desc = desc;
 		this.auteur = auteur;
-		this.etat = "OPEN";
+		this.etat = Etat.OPEN;
+		this.agentId = null;
+		this.dateAssignation = null;
 		this.dateCreation = LocalDateTime.now();
 	}
 	
@@ -41,8 +45,12 @@ public class Incident implements Serializable{
 		return desc;
 	}
 	
-	public String getEtat() {
+	public Etat getEtat() {
 		return etat;
+	}
+	
+	public void setEtat(Etat etat) {
+		this.etat = etat;
 	}
 		
 	public String getAuteur() {
@@ -51,6 +59,22 @@ public class Incident implements Serializable{
 	
 	public LocalDateTime getDateCreation() {
 		return dateCreation;
+	}
+	
+	public String getAgentId() {
+		return agentId;
+	}
+	
+	public void setAgentId(String agentId) {
+		this.agentId = agentId;
+	}
+	
+	public LocalDateTime getDateAssignation() {
+		return dateAssignation;
+	}
+	
+	public void setDateAssignation(LocalDateTime dateAssignation) {
+		this.dateAssignation = dateAssignation;
 	}
 	
 	@Override

@@ -13,6 +13,11 @@ public interface IIncidentService extends java.rmi.Remote{
 
 	public List<Incident> getMesIncidents(String token) throws RemoteException;
 	
-	public List<Incident> getToutLesIncidents(String token) throws RemoteException;
+	public List<Incident> getMesIncidentsAssigned(String token) throws RemoteException;
+	
+	public List<Incident> getIncidentsOpen(String token) throws RemoteException;
+	
+	
+	public void prendreEnChargeTicket(String token, String idTicket) throws RemoteException;
 }
 
