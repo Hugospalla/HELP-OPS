@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import Serveur.dao.IUserDao;
 import Serveur.session.ISessionManager;
+import Serveur.utils.PasswordUtil;
 import commons.interfaces.IAuthService;
 import commons.modele.AuthResponse;
 import commons.modele.Role;
@@ -26,7 +27,9 @@ public class AuthImpl extends UnicastRemoteObject implements IAuthService{
 	public AuthResponse seConnecter(String login, String password) throws RemoteException {
 		User user = userDao.getUserByLogin(login);
 		
-		if (user != null && user.getPassword().equals(password)) {
+		String hashedInput = PasswordUtil.hash(password);
+		
+		if (user != null && user.getPassword().equals(hashedInput)) {
 			String token = UUID.randomUUID().toString();
 			sessionManager.createSession(token, user);
 			

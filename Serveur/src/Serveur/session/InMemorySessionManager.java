@@ -1,11 +1,14 @@
 package Serveur.session;
 
+
 import java.util.HashMap;
 
 import commons.modele.User;
 
 public class InMemorySessionManager implements ISessionManager{
-
+	
+	
+	
 	private HashMap<String, User> activeSessions = new HashMap<>();
 	
 	@Override
