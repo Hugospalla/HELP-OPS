@@ -11,6 +11,7 @@ import commons.interfaces.IAuthService;
 import commons.interfaces.IIncidentService;
 import commons.modele.Categorie;
 import commons.modele.Incident;
+import commons.modele.Role;
 
 public class IncidentImpl extends UnicastRemoteObject implements IIncidentService{
 
@@ -38,6 +39,12 @@ public class IncidentImpl extends UnicastRemoteObject implements IIncidentServic
 		
 		if(auth.isTokenValid(token)) {
 			
+			Role roleDemandeur = auth.getRoleByToken(token);
+			
+			if(roleDemandeur != Role.UTILISATEUR) {
+				throw new RemoteException("Accès refusé : Seul un agent a le droit d'afficher tous les tickets");
+			}
+			
 			String ticketAuteur = auth.getLoginByToken(token);
 			String ticketId = UUID.randomUUID().toString();
 			
@@ -60,6 +67,12 @@ public class IncidentImpl extends UnicastRemoteObject implements IIncidentServic
 		if (auth == null) throw new RemoteException("Service d'authentification indisponible");
 		
 		if (auth.isTokenValid(token)) {
+			Role roleDemandeur = auth.getRoleByToken(token);
+			
+			if(roleDemandeur != Role.UTILISATEUR) {
+				throw new RemoteException("Accès refusé : Seul un agent a le droit d'afficher tous les tickets");
+			}
+			
 			String demandeur = auth.getLoginByToken(token);
 			
 			List<Incident> res = incidentDao.getIncidentsByAuteur(demandeur);
@@ -72,6 +85,27 @@ public class IncidentImpl extends UnicastRemoteObject implements IIncidentServic
 		} else {
 			System.out.println("INC >> Session invalide lors de la consultation.");
 			throw new RemoteException("Votre session est invalide ou a expiré. Veuillez vous reconnecter");
+		}
+	}
+	
+	@Override
+	public List<Incident> getToutLesIncidents(String token) throws RemoteException{
+		
+		IAuthService auth = getAuth();
+		if (auth == null) throw new RemoteException("Service d'authentification indisponible");
+		
+		if (auth.isTokenValid(token)) {
+			
+			Role roleDemandeur = auth.getRoleByToken(token);
+			
+			if (roleDemandeur != Role.AGENT) {
+				throw new RemoteException("Accès refusé : Seul un agent a le droit d'afficher tous les tickets");
+			}
+			
+			return incidentDao.getAllIncidents();
+			
+		} else {
+			throw new RemoteException("Session invalide ou expiré");
 		}
 	}
 	

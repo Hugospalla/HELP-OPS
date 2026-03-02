@@ -12,5 +12,7 @@ public interface IIncidentService extends java.rmi.Remote{
 	public Incident creerIncident(String token, Categorie categorie, String titre, String desc) throws RemoteException;
 
 	public List<Incident> getMesIncidents(String token) throws RemoteException;
+	
+	public List<Incident> getToutLesIncidents(String token) throws RemoteException;
 }
 

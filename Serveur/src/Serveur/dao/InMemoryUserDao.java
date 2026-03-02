@@ -2,6 +2,7 @@ package Serveur.dao;
 
 import java.util.HashMap;
 
+import commons.modele.Role;
 import commons.modele.User;
 
 public class InMemoryUserDao implements IUserDao {
@@ -9,10 +10,11 @@ public class InMemoryUserDao implements IUserDao {
 	private HashMap<String, User> userBD = new HashMap<>();
 	
 	public InMemoryUserDao() {
-		userBD.put("hugos", new User("hugos", "test"));
-        userBD.put("julien", new User("julien", "test"));
-        userBD.put("hugol", new User("hugol", "test"));
-        userBD.put("fabien", new User("fabien", "test"));
+		userBD.put("hugos", new User("hugos", "test", Role.UTILISATEUR));
+        userBD.put("julien", new User("julien", "test", Role.UTILISATEUR));
+        userBD.put("hugol", new User("hugol", "test", Role.UTILISATEUR));
+        userBD.put("fabien", new User("fabien", "test", Role.UTILISATEUR));
+        userBD.put("admin", new User("admin", "test", Role.AGENT));
 	}
 	
 	@Override
