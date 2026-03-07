@@ -1,12 +1,13 @@
 package Serveur.dao;
 
+import Serveur.utils.PasswordUtil; // Import du code de ton camarade
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
 
 public class DatabaseManager {
-    // URL de connexion SQLite (crée un fichier helpops.db à la racine du projet)
     private static final String URL = "jdbc:sqlite:helpops.db";
 
     public static Connection getConnection() throws SQLException {
@@ -34,22 +35,38 @@ public class DatabaseManager {
                 + "FOREIGN KEY (agent_id) REFERENCES users(login)"
                 + ");";
 
-        // Insertion des utilisateurs par défaut (INSERT OR IGNORE évite les erreurs si on relance le serveur)
-        String sqlBouchon = "INSERT OR IGNORE INTO users (login, password, role) VALUES "
-                + "('hugos', 'test', 'UTILISATEUR'),"
-                + "('julien', 'test', 'UTILISATEUR'),"
-                + "('hugol', 'test', 'UTILISATEUR'),"
-                + "('fabien', 'test', 'UTILISATEUR'),"
-                + "('admin', 'test', 'AGENT'),"
-                + "('admin2', 'test', 'AGENT');";
-
         try (Connection conn = getConnection(); Statement stmt = conn.createStatement()) {
             stmt.execute(sqlUsers);
             stmt.execute(sqlIncidents);
-            stmt.execute(sqlBouchon);
-            System.out.println("BDD >> Base de données SQLite prête !");
+
+            // Insertion sécurisée avec le hachage de ton ami
+            String insertQuery = "INSERT OR IGNORE INTO users (login, password, role) VALUES (?, ?, ?)";
+            try (PreparedStatement pstmt = conn.prepareStatement(insertQuery)) {
+                
+                String mdpHache = PasswordUtil.hash("test"); 
+
+                String[][] defaultUsers = {
+                    {"hugos", "UTILISATEUR"},
+                    {"julien", "UTILISATEUR"},
+                    {"hugol", "UTILISATEUR"},
+                    {"fabien", "UTILISATEUR"},
+                    {"admin", "AGENT"},
+                    {"admin2", "AGENT"}
+                };
+
+                for (String[] u : defaultUsers) {
+                    pstmt.setString(1, u[0]);
+                    pstmt.setString(2, mdpHache); // On insère le mot de passe chiffré !
+                    pstmt.setString(3, u[1]);
+                    pstmt.executeUpdate();
+                }
+            }
+            System.out.println("BDD >> Base de données SQLite prête avec mots de passe chiffrés !");
+            
         } catch (SQLException e) {
-            System.err.println("Erreur d'initialisation de la BD : " + e.getMessage());
+            System.err.println("Erreur SQL lors de l'initialisation de la BD : " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("Erreur de chiffrement : " + e.getMessage());
         }
     }
 }

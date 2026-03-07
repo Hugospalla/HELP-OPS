@@ -1,15 +1,15 @@
 package Serveur;
 
-import java.rmi.RemoteException;
-import java.rmi.server.UnicastRemoteObject;
-import java.util.UUID;
-
 import Serveur.dao.IUserDao;
 import Serveur.session.ISessionManager;
+import Serveur.utils.PasswordUtil;
 import commons.interfaces.IAuthService;
 import commons.modele.AuthResponse;
 import commons.modele.Role;
 import commons.modele.User;
+import java.rmi.RemoteException;
+import java.rmi.server.UnicastRemoteObject;
+import java.util.UUID;
 
 public class AuthImpl extends UnicastRemoteObject implements IAuthService{
 
@@ -26,7 +26,10 @@ public class AuthImpl extends UnicastRemoteObject implements IAuthService{
 	public AuthResponse seConnecter(String login, String password) throws RemoteException {
 		User user = userDao.getUserByLogin(login);
 		
-		if (user != null && user.getPassword().equals(password)) {
+		// NOUVEAUTÉ : On hache le mot de passe tapé par l'utilisateur
+		String hashedInput = PasswordUtil.hash(password);
+		
+		if (user != null && user.getPassword().equals(hashedInput)) {
 			String token = UUID.randomUUID().toString();
 			sessionManager.createSession(token, user);
 			
@@ -57,5 +60,3 @@ public class AuthImpl extends UnicastRemoteObject implements IAuthService{
 		return null;
 	}
 }
-	
-
