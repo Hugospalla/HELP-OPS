@@ -26,7 +26,6 @@ public class AuthImpl extends UnicastRemoteObject implements IAuthService{
 	public AuthResponse seConnecter(String login, String password) throws RemoteException {
 		User user = userDao.getUserByLogin(login);
 		
-		// NOUVEAUTÉ : On hache le mot de passe tapé par l'utilisateur
 		String hashedInput = PasswordUtil.hash(password);
 		
 		if (user != null && user.getPassword().equals(hashedInput)) {
@@ -61,3 +60,4 @@ public class AuthImpl extends UnicastRemoteObject implements IAuthService{
 	}
 
 }
+
