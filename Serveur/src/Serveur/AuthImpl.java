@@ -38,7 +38,7 @@ public class AuthImpl extends UnicastRemoteObject implements IAuthService{
 		}
 		
 		System.out.println("AUTH >> Echec connexion pour " + login);
-		throw new RemoteException("Identifiant ou mote de passe incorrect");
+		throw new RemoteException("Identifiant ou mot de passe incorrect");
 	}
 	
 	@Override
@@ -59,4 +59,5 @@ public class AuthImpl extends UnicastRemoteObject implements IAuthService{
 		}
 		return null;
 	}
+
 }
