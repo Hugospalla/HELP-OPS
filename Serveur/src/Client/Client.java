@@ -99,7 +99,8 @@ public class Client {
             System.out.println("1. Lister les tickets en attente (OPEN)");
             System.out.println("2. Prendre en charge un ticket");
             System.out.println("3. Voir MES tickets en cours (ASSIGNED)");
-            System.out.println("4. Quitter");
+            System.out.println("4. Resoudre mes tikets");
+            System.out.println("5. Quitter");
         }
         System.out.print("Votre choix : ");
     }
@@ -122,7 +123,8 @@ public class Client {
             case 1: actionListerTicketsOpen(); return true;
             case 2: actionPrendreEnCharge(); return true;
             case 3: actionVoirMesTicketsAssignes(); return true;
-            case 4:
+            case 4 : actionResoudreTicket(); return true;
+            case 5:
                 System.out.println("Déconnexion... Au revoir " + monLogin + " !");
                 return false;
             default:
@@ -250,7 +252,7 @@ public class Client {
             }
         }
     }
-
+    
     private static void actionVoirMesTicketsAssignes() {
         System.out.println("\n[ MES TICKETS EN COURS (ASSIGNED) ]");
         try {
@@ -290,4 +292,31 @@ public class Client {
             System.out.println(">> Erreur : " + e.getMessage());
         }
     }
+    
+    private static void actionResoudreTicket() {
+        System.out.println("\n[ RESOUDRE UN TICKET ]");
+        
+        if (dernieresRecherches == null || dernieresRecherches.isEmpty()) {
+            System.out.println(">> Veuillez d'abord lister les tickets (Choix 1) pour voir les numéros.");
+        } else {
+            System.out.print("Entrez le NUMÉRO du ticket (ex: 0, 1...) : ");
+            try {
+                int choixNum = Integer.parseInt(sc.nextLine());
+                
+                if (choixNum >= 0 && choixNum < dernieresRecherches.size()) {
+                    String idTicketVise = dernieresRecherches.get(choixNum).getId();
+                    incidentService.cloturerTicket(monToken, idTicketVise);
+                    System.out.println(">> Succès ! Vous avez résolu ce ticket.");
+                    dernieresRecherches = null; 
+                } else {
+                    System.out.println(">> Erreur : Ce numéro n'est pas dans la liste.");
+                }
+            } catch (NumberFormatException e) {
+                System.out.println(">> Erreur : Veuillez entrer un chiffre valide.");
+            } catch (RemoteException e) {
+                System.out.println(">> Erreur serveur : " + e.getMessage());
+            }
+        }
+    }
+
 }
