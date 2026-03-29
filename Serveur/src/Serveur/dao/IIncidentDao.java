@@ -1,8 +1,7 @@
 package Serveur.dao;
 
-import java.util.List;
-
 import commons.modele.Incident;
+import java.util.List;
 
 public interface IIncidentDao {
 
@@ -13,5 +12,7 @@ public interface IIncidentDao {
 	Incident getIncidentsById(String id);
 	
 	List<Incident> getAllIncidents();
+	// ... tes autres méthodes
+    public commons.modele.Statistiques getStatistiques();
 	
 }

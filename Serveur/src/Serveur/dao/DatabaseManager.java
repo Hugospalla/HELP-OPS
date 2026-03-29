@@ -1,6 +1,6 @@
 package Serveur.dao;
 
-import Serveur.utils.PasswordUtil; // Import du code de ton camarade
+import Serveur.utils.PasswordUtil;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -21,6 +21,7 @@ public class DatabaseManager {
                 + "role TEXT NOT NULL"
                 + ");";
 
+        // AJOUT DE LA COLONNE date_resolution
         String sqlIncidents = "CREATE TABLE IF NOT EXISTS incidents ("
                 + "id TEXT PRIMARY KEY, "
                 + "categorie TEXT NOT NULL, "
@@ -31,6 +32,7 @@ public class DatabaseManager {
                 + "auteur TEXT NOT NULL, "
                 + "date_creation TEXT NOT NULL, "
                 + "date_assignation TEXT, "
+                + "date_resolution TEXT, " 
                 + "FOREIGN KEY (auteur) REFERENCES users(login), "
                 + "FOREIGN KEY (agent_id) REFERENCES users(login)"
                 + ");";
@@ -39,7 +41,6 @@ public class DatabaseManager {
             stmt.execute(sqlUsers);
             stmt.execute(sqlIncidents);
 
-            // Insertion sécurisée avec le hachage de ton ami
             String insertQuery = "INSERT OR IGNORE INTO users (login, password, role) VALUES (?, ?, ?)";
             try (PreparedStatement pstmt = conn.prepareStatement(insertQuery)) {
                 
@@ -56,12 +57,12 @@ public class DatabaseManager {
 
                 for (String[] u : defaultUsers) {
                     pstmt.setString(1, u[0]);
-                    pstmt.setString(2, mdpHache); // On insère le mot de passe chiffré !
+                    pstmt.setString(2, mdpHache);
                     pstmt.setString(3, u[1]);
                     pstmt.executeUpdate();
                 }
             }
-            System.out.println("BDD >> Base de données SQLite prête avec mots de passe chiffrés !");
+            System.out.println("BDD >> Base de données SQLite prête avec date_resolution !");
             
         } catch (SQLException e) {
             System.err.println("Erreur SQL lors de l'initialisation de la BD : " + e.getMessage());

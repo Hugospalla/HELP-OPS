@@ -1,10 +1,9 @@
 package commons.interfaces;
 
-import java.rmi.RemoteException;
-import java.util.List;
-
 import commons.modele.Categorie;
 import commons.modele.Incident;
+import java.rmi.RemoteException;
+import java.util.List;
 
 
 public interface IIncidentService extends java.rmi.Remote{
@@ -21,5 +20,6 @@ public interface IIncidentService extends java.rmi.Remote{
 	public void prendreEnChargeTicket(String token, String idTicket) throws RemoteException;
 	
 	public void cloturerTicket(String token, String idTicket) throws RemoteException;
+	public commons.modele.Statistiques obtenirStatistiques(String token) throws RemoteException;
 }
 

@@ -1,5 +1,8 @@
 package Serveur.dao;
 
+import commons.modele.Categorie;
+import commons.modele.Etat;
+import commons.modele.Incident;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -8,16 +11,12 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import commons.modele.Categorie;
-import commons.modele.Etat;
-import commons.modele.Incident;
-
 public class JdbcIncidentDao implements IIncidentDao {
 
     @Override
     public void save(Incident incident) {
-        // "INSERT OR REPLACE" permet de créer ou de mettre à jour le ticket en une seule requête (très pratique sur SQLite)
-        String query = "INSERT OR REPLACE INTO incidents (id, categorie, titre, description, etat, agent_id, auteur, date_creation, date_assignation) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        // AJOUT DE date_resolution DANS LA REQUÊTE
+        String query = "INSERT OR REPLACE INTO incidents (id, categorie, titre, description, etat, agent_id, auteur, date_creation, date_assignation, date_resolution) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(query)) {
@@ -31,6 +30,9 @@ public class JdbcIncidentDao implements IIncidentDao {
             pstmt.setString(7, incident.getAuteur());
             pstmt.setString(8, incident.getDateCreation().toString());
             pstmt.setString(9, incident.getDateAssignation() != null ? incident.getDateAssignation().toString() : null);
+            
+            // On sauvegarde la date de résolution si elle existe
+            pstmt.setString(10, incident.getDateResolution() != null ? incident.getDateResolution().toString() : null);
             
             pstmt.executeUpdate();
         } catch (SQLException e) {
@@ -77,8 +79,16 @@ public class JdbcIncidentDao implements IIncidentDao {
                     incident.setAgentId(rs.getString("agent_id"));
                     
                     String dateAssignationStr = rs.getString("date_assignation");
-                    if (dateAssignationStr != null && !dateAssignationStr.isEmpty()) {
+                    if (dateAssignationStr != null && !dateAssignationStr.isEmpty() && !dateAssignationStr.equals("null")) {
                         incident.setDateAssignation(LocalDateTime.parse(dateAssignationStr));
+                    }
+                    
+                    // NOUVEAU : Récupération de la Date de Résolution
+                    String dateResolutionStr = rs.getString("date_resolution");
+                    if (dateResolutionStr != null && !dateResolutionStr.isEmpty() && !dateResolutionStr.equals("null")) {
+                        incident.setDateResolution(LocalDateTime.parse(dateResolutionStr));
+                    } else {
+                        incident.setDateResolution(null); // Par sécurité
                     }
                     
                     incidents.add(incident);
@@ -88,5 +98,53 @@ public class JdbcIncidentDao implements IIncidentDao {
             System.err.println("Erreur SQL lecture incidents : " + e.getMessage());
         }
         return incidents;
+    }
+    @Override
+    public commons.modele.Statistiques getStatistiques() {
+        commons.modele.Statistiques stats = new commons.modele.Statistiques();
+        
+        try (Connection conn = DatabaseManager.getConnection();
+             java.sql.Statement stmt = conn.createStatement()) {
+             
+             // 1. Total des tickets
+             ResultSet rsTotal = stmt.executeQuery("SELECT COUNT(*) AS total FROM incidents");
+             if (rsTotal.next()) stats.setTotalTickets(rsTotal.getInt("total"));
+             
+             // 2. Tickets résolus
+             ResultSet rsResolus = stmt.executeQuery("SELECT COUNT(*) AS resolus FROM incidents WHERE etat = 'RESOLVED'");
+             if (rsResolus.next()) stats.setTicketsResolus(rsResolus.getInt("resolus"));
+             
+             // 3. Tickets par état
+             ResultSet rsEtat = stmt.executeQuery("SELECT etat, COUNT(*) AS nb FROM incidents GROUP BY etat");
+             java.util.Map<String, Integer> parEtat = new java.util.HashMap<>();
+             while (rsEtat.next()) parEtat.put(rsEtat.getString("etat"), rsEtat.getInt("nb"));
+             stats.setTicketsParEtat(parEtat);
+             
+             // 4. Temps moyen OPEN -> RESOLVED (en minutes)
+             // julianday() convertit une date ISO en nombre de jours. On multiplie par 24 (h) * 60 (min)
+             ResultSet rsTemps = stmt.executeQuery("SELECT AVG(julianday(date_resolution) - julianday(date_creation)) * 24 * 60 AS temps_moyen FROM incidents WHERE etat = 'RESOLVED'");
+             if (rsTemps.next()) stats.setTempsMoyenResolutionMinutes(rsTemps.getDouble("temps_moyen"));
+             
+             // 5 & 6. Tickets par agent ET Taux de pression (tickets par agent par jour)
+             // Pression = nb_tickets_de_lagent / nb_jours_depuis_sa_premiere_assignation (avec un minimum de 1 jour pour éviter la division par zéro)
+             String sqlAgent = "SELECT agent_id, COUNT(*) AS nb, "
+                     + "(COUNT(*) / MAX(1.0, julianday('now', 'localtime') - julianday(MIN(date_assignation)))) AS pression "
+                     + "FROM incidents WHERE agent_id IS NOT NULL GROUP BY agent_id";
+             ResultSet rsAgent = stmt.executeQuery(sqlAgent);
+             
+             java.util.Map<String, Integer> parAgent = new java.util.HashMap<>();
+             java.util.Map<String, Double> pression = new java.util.HashMap<>();
+             while (rsAgent.next()) {
+                 String agentId = rsAgent.getString("agent_id");
+                 parAgent.put(agentId, rsAgent.getInt("nb"));
+                 pression.put(agentId, rsAgent.getDouble("pression"));
+             }
+             stats.setTicketsParAgent(parAgent);
+             stats.setPressionParAgent(pression);
+             
+        } catch (SQLException e) {
+            System.err.println("Erreur SQL lors du calcul des statistiques : " + e.getMessage());
+        }
+        return stats;
     }
 }

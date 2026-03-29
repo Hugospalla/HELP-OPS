@@ -1,13 +1,5 @@
 package Serveur;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.rmi.Naming;
-import java.rmi.RemoteException;
-import java.rmi.server.UnicastRemoteObject;
-import java.time.LocalDateTime;
-import java.util.UUID;
-
 import Serveur.dao.IIncidentDao;
 import commons.interfaces.IAuthService;
 import commons.interfaces.IIncidentService;
@@ -15,6 +7,13 @@ import commons.modele.Categorie;
 import commons.modele.Etat;
 import commons.modele.Incident;
 import commons.modele.Role;
+import java.rmi.Naming;
+import java.rmi.RemoteException;
+import java.rmi.server.UnicastRemoteObject;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 public class IncidentImpl extends UnicastRemoteObject implements IIncidentService{
 
@@ -226,6 +225,24 @@ public class IncidentImpl extends UnicastRemoteObject implements IIncidentServic
 			System.out.println("INC >> Ticket : " + idTicket + "résolut par " + ticket.getAgentId());
 		} else {
 			throw new RemoteException("Session invalide ou expiré");
+		}
+	}
+	@Override
+	public commons.modele.Statistiques obtenirStatistiques(String token) throws RemoteException {
+		IAuthService auth = getAuth();
+		if (auth == null) throw new RemoteException("Service d'authentification indisponible");
+		
+		if (auth.isTokenValid(token)) {
+			Role roleDemandeur = auth.getRoleByToken(token);
+			
+			if (roleDemandeur != Role.AGENT) {
+				throw new RemoteException("Accès refusé : Seul un agent a le droit d'afficher les statistiques");
+			}
+			
+			return incidentDao.getStatistiques();
+			
+		} else {
+			throw new RemoteException("Session invalide ou expirée");
 		}
 	}
 }

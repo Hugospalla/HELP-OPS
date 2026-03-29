@@ -1,16 +1,15 @@
 package Client;
 
-import java.rmi.Naming;
-import java.rmi.RemoteException;
-import java.util.List;
-import java.util.Scanner;
-
 import commons.interfaces.IAuthService;
 import commons.interfaces.IIncidentService;
 import commons.modele.AuthResponse;
 import commons.modele.Categorie;
 import commons.modele.Incident;
 import commons.modele.Role;
+import java.rmi.Naming;
+import java.rmi.RemoteException;
+import java.util.List;
+import java.util.Scanner;
 
 public class Client {
     
@@ -100,7 +99,8 @@ public class Client {
             System.out.println("\n--- MENU AGENT ---");
             System.out.println("1. Lister les tickets en attente (OPEN) pour prise en charge");
             System.out.println("2. Voir MES tickets en cours (ASSIGNED) pour résolution");
-            System.out.println("3. Quitter");
+            System.out.println("5. Voir les Statistiques de la plateforme"); // NOUVEAU
+            System.out.println("6. Quitter");
         }
         System.out.print("Votre choix : ");
     }
@@ -122,7 +122,9 @@ public class Client {
         switch(res) {
             case 1: actionListerTicketsOpen(); return true;
             case 2: actionVoirMesTicketsAssignes(); return true;
-            case 3:
+            // ... garde tes autres case s'ils existent (3, 4...)
+            case 5: actionVoirStatistiques(); return true; // APPEL DE LA FONCTION
+            case 6: // ou case 3 selon ta numérotation actuelle
                 System.out.println("Déconnexion... Au revoir " + monLogin + " !");
                 return false;
             default:
@@ -211,6 +213,19 @@ public class Client {
             }
         } catch (RemoteException e) {
             System.out.println(">> Erreur : " + e.getMessage());
+        }
+    }
+    private static void actionVoirStatistiques() {
+        try {
+            commons.modele.Statistiques stats = incidentService.obtenirStatistiques(monToken);
+            if (stats != null) {
+                // On utilise la fonction d'affichage qu'on a codé dans la classe Statistiques !
+                System.out.println(stats.afficherBilan());
+            } else {
+                System.out.println(">> Impossible de récupérer les statistiques.");
+            }
+        } catch (RemoteException e) {
+            System.out.println(">> Erreur serveur : " + e.getMessage());
         }
     }
 
