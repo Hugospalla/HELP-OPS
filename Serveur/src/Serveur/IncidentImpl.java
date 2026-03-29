@@ -189,6 +189,45 @@ public class IncidentImpl extends UnicastRemoteObject implements IIncidentServic
 		
 	}
 	
+	@Override
+	public void cloturerTicket(String token, String idTicket) throws RemoteException {
+		
+		IAuthService auth = getAuth();
+		if (auth == null) throw new RemoteException("Service d'authentification indisponible");
+		
+		if (auth.isTokenValid(token)) {
+			
+			Role roleDemandeur = auth.getRoleByToken(token);
+			String nomDemandeur = auth.getLoginByToken(token);
+			
+			
+			if (roleDemandeur != Role.AGENT) {
+				throw new RemoteException("Accès refusé : Seul un agent a le droit d'afficher tous les tickets");
+			}
+			
+			Incident ticket = incidentDao.getIncidentsById(idTicket);
+			
+			if (ticket == null) {
+				throw new RemoteException("Erreur: le ticket '" + idTicket + "' n'existe pas");
+			}
+			
+			if (ticket.getEtat() != Etat.ASSIGNED) {
+				throw new RemoteException("Ce ticket ne peut pas être résolu");
+			}
+			
+			if (!nomDemandeur.equals(ticket.getAgentId())) {
+				throw new RemoteException("Vous ne pouvez pas résoudre un ticket qui n'est pas le votre");
+			}
+			
+			ticket.setDateResolution(LocalDateTime.now());
+			ticket.setEtat(Etat.RESOLVED);
+			
+			incidentDao.save(ticket);
+			System.out.println("INC >> Ticket : " + idTicket + "résolut par " + ticket.getAgentId());
+		} else {
+			throw new RemoteException("Session invalide ou expiré");
+		}
+	}
 }
 	
 

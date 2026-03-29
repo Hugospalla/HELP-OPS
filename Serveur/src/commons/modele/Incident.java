@@ -16,6 +16,7 @@ public class Incident implements Serializable{
 	private String auteur;
 	private LocalDateTime dateCreation;
 	private LocalDateTime dateAssignation;
+	private LocalDateTime dateResolution;
 	
 	public Incident(String id, Categorie categorie, String titre, String desc, String auteur) {
 		this.id = id;
@@ -27,6 +28,7 @@ public class Incident implements Serializable{
 		this.agentId = null;
 		this.dateAssignation = null;
 		this.dateCreation = LocalDateTime.now();
+		this.dateResolution = LocalDateTime.now();
 	}
 	
 	public String getId() {
@@ -75,6 +77,14 @@ public class Incident implements Serializable{
 	
 	public void setDateAssignation(LocalDateTime dateAssignation) {
 		this.dateAssignation = dateAssignation;
+	}
+	
+	public LocalDateTime getDateResolution() {
+		return dateResolution;
+	}
+	
+	public void setDateResolution(LocalDateTime dateResolution) {
+		this.dateResolution = dateResolution;
 	}
 	
 	@Override
