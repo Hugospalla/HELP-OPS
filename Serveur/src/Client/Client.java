@@ -99,8 +99,8 @@ public class Client {
             System.out.println("\n--- MENU AGENT ---");
             System.out.println("1. Lister les tickets en attente (OPEN) pour prise en charge");
             System.out.println("2. Voir MES tickets en cours (ASSIGNED) pour résolution");
-            System.out.println("5. Voir les Statistiques de la plateforme"); // NOUVEAU
-            System.out.println("6. Quitter");
+            System.out.println("3. Voir les Statistiques de la plateforme"); // NOUVEAU
+            System.out.println("4. Quitter");
         }
         System.out.print("Votre choix : ");
     }
@@ -122,9 +122,8 @@ public class Client {
         switch(res) {
             case 1: actionListerTicketsOpen(); return true;
             case 2: actionVoirMesTicketsAssignes(); return true;
-            // ... garde tes autres case s'ils existent (3, 4...)
-            case 5: actionVoirStatistiques(); return true; // APPEL DE LA FONCTION
-            case 6: // ou case 3 selon ta numérotation actuelle
+            case 3: actionVoirStatistiques(); return true; 
+            case 4: 
                 System.out.println("Déconnexion... Au revoir " + monLogin + " !");
                 return false;
             default:
@@ -219,7 +218,6 @@ public class Client {
         try {
             commons.modele.Statistiques stats = incidentService.obtenirStatistiques(monToken);
             if (stats != null) {
-                // On utilise la fonction d'affichage qu'on a codé dans la classe Statistiques !
                 System.out.println(stats.afficherBilan());
             } else {
                 System.out.println(">> Impossible de récupérer les statistiques.");

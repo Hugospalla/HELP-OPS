@@ -12,7 +12,7 @@ public interface IIncidentDao {
 	Incident getIncidentsById(String id);
 	
 	List<Incident> getAllIncidents();
-	// ... tes autres méthodes
+
     public commons.modele.Statistiques getStatistiques();
 	
 }

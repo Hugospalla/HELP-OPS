@@ -19,6 +19,38 @@ public class IncidentImpl extends UnicastRemoteObject implements IIncidentServic
 
 	private IIncidentDao incidentDao;
 	
+	private int consultationsEnCours = 0;
+	private boolean modificationTicketEnCours = false;
+	private int modificationsTicketEnAttente = 0;
+	
+	private synchronized void debuterConsultationTickets() throws InterruptedException {
+		while (modificationTicketEnCours || modificationsTicketEnAttente > 0) {
+			wait();
+		}
+		consultationsEnCours++;
+	}
+	
+	private synchronized void terminerConsultationTickets() {
+		consultationsEnCours--;
+		if (consultationsEnCours ==0) {
+			notifyAll();
+		}
+	}
+	
+	private synchronized void debuterModificationTicket() throws InterruptedException {
+		modificationsTicketEnAttente++;
+		while (modificationTicketEnCours || consultationsEnCours > 0) {
+			wait();
+		}
+		modificationsTicketEnAttente--;
+		modificationTicketEnCours = true;
+	}
+	
+	private synchronized void terminerModificationTicket() {
+		modificationTicketEnCours = false;
+		notifyAll();
+	}
+	
 	public IncidentImpl(IIncidentDao incidentDao) throws RemoteException {
 		super();
 		this.incidentDao = incidentDao;
@@ -52,12 +84,18 @@ public class IncidentImpl extends UnicastRemoteObject implements IIncidentServic
 			
 			Incident ticket = new Incident(ticketId, categorie, titre, desc, ticketAuteur);
 			
-			incidentDao.save(ticket);
+			try {
+				debuterModificationTicket();
+				incidentDao.save(ticket);
+			}catch (InterruptedException e) {
+				throw new RemoteException("Création interrompue par le système", e);
+			} finally {
+				terminerModificationTicket();
+			}
 			
 			System.out.println("INC >> Creation d'un ticket [" + ticketId.substring(0,8) + "] pour : " + ticketAuteur);
 			return ticket;
 		} else {
-			System.out.println("INC >> Session invalide, impossible de créer le ticket.");
 			throw new RemoteException("Votre session est invalide ou a expiré. Veuillez vous reconnecter");
 		}
 	}
@@ -77,7 +115,16 @@ public class IncidentImpl extends UnicastRemoteObject implements IIncidentServic
 			
 			String demandeur = auth.getLoginByToken(token);
 			
-			List<Incident> res = incidentDao.getIncidentsByAuteur(demandeur);
+			List<Incident> res ;
+			
+			try {
+				debuterConsultationTickets();
+				res = incidentDao.getIncidentsByAuteur(demandeur);
+			} catch (InterruptedException e) {
+				throw new RemoteException("Consultation interrompue par le système", e);
+			} finally {
+				terminerConsultationTickets();
+			}
 			
 			if (res.isEmpty()) {
 				System.out.println("INC >> Aucun ticket trouvé pour " + demandeur);
@@ -106,9 +153,18 @@ public class IncidentImpl extends UnicastRemoteObject implements IIncidentServic
 			
 			String nomAgent = auth.getLoginByToken(token);
 			
-			List<Incident> tous = incidentDao.getAllIncidents();
-			List<Incident> mesAssigned = new ArrayList<>();
+			List<Incident> tous ;
 			
+			try {
+				debuterConsultationTickets();
+				tous = incidentDao.getAllIncidents();
+			} catch (InterruptedException e) {
+				throw new RemoteException("Consultation interrompue par le système", e);
+			} finally {
+				terminerConsultationTickets();
+			}
+			
+			List<Incident> mesAssigned = new ArrayList<>();
 			for (Incident inc : tous) {
 				if (inc.getEtat() == Etat.ASSIGNED && nomAgent.equals(inc.getAgentId())) {
 					mesAssigned.add(inc);
@@ -135,7 +191,17 @@ public class IncidentImpl extends UnicastRemoteObject implements IIncidentServic
 				throw new RemoteException("Accès refusé : Seul un agent a le droit d'afficher tous les tickets");
 			}
 			
-			List<Incident> tous = incidentDao.getAllIncidents();
+			List<Incident> tous;
+			
+			try {
+				debuterConsultationTickets();
+				tous = incidentDao.getAllIncidents();
+			} catch (InterruptedException e) {
+				throw new RemoteException("Consultation interrompue par le système", e);
+			} finally {
+				terminerConsultationTickets();
+			}
+			
 			List<Incident> ouverts = new ArrayList<>();
 			
 			for (Incident inc: tous) {
@@ -154,7 +220,7 @@ public class IncidentImpl extends UnicastRemoteObject implements IIncidentServic
 
 	
 	@Override
-	public synchronized void prendreEnChargeTicket(String token, String idTicket) throws RemoteException{
+	public void prendreEnChargeTicket(String token, String idTicket) throws RemoteException{
 		
 		IAuthService auth = getAuth();
 		if (auth == null) throw new RemoteException("Service d'authentification indisponible");
@@ -166,22 +232,31 @@ public class IncidentImpl extends UnicastRemoteObject implements IIncidentServic
 				throw new RemoteException("Accès refusé : Seul un agent a le droit d'afficher tous les tickets");
 			}
 			
-			Incident ticket = incidentDao.getIncidentsById(idTicket);
-			if (ticket == null) {
-				throw new RemoteException("Erreur: le ticket '" + idTicket + "' n'existe pas");
+			try {
+				debuterModificationTicket();
+				Incident ticket = incidentDao.getIncidentsById(idTicket);
+				if (ticket == null) {
+					throw new RemoteException("Erreur: le ticket '" + idTicket + "' n'existe pas");
+				}
+				
+				if (ticket.getEtat() != Etat.OPEN) {
+					throw new RemoteException("Ce ticket ne peut pas être pris");
+				}
+				
+				ticket.setAgentId(auth.getLoginByToken(token));
+				ticket.setDateAssignation(LocalDateTime.now());
+				ticket.setEtat(Etat.ASSIGNED);
+				
+				
+				incidentDao.save(ticket);
+				System.out.println("INC >> Ticket : " + idTicket + "assigné à " + ticket.getAgentId());
+			} catch (InterruptedException e) {
+				throw new RemoteException("Modification interrompue par le système", e);
+			} finally {
+				terminerModificationTicket();
 			}
 			
-			if (ticket.getEtat() != Etat.OPEN) {
-				throw new RemoteException("Ce ticket ne peut pas être pris");
-			}
 			
-			ticket.setAgentId(auth.getLoginByToken(token));
-			ticket.setDateAssignation(LocalDateTime.now());
-			ticket.setEtat(Etat.ASSIGNED);
-			
-			
-			incidentDao.save(ticket);
-			System.out.println("INC >> Ticket : " + idTicket + "assigné à " + ticket.getAgentId());
 		} else {
 			throw new RemoteException("Session invalide ou expirée");
 		}
@@ -204,25 +279,35 @@ public class IncidentImpl extends UnicastRemoteObject implements IIncidentServic
 				throw new RemoteException("Accès refusé : Seul un agent a le droit d'afficher tous les tickets");
 			}
 			
-			Incident ticket = incidentDao.getIncidentsById(idTicket);
-			
-			if (ticket == null) {
-				throw new RemoteException("Erreur: le ticket '" + idTicket + "' n'existe pas");
+			try {
+				debuterModificationTicket();
+				
+				Incident ticket = incidentDao.getIncidentsById(idTicket);
+				
+				if (ticket == null) {
+					throw new RemoteException("Erreur: le ticket '" + idTicket + "' n'existe pas");
+				}
+				
+				if (ticket.getEtat() != Etat.ASSIGNED) {
+					throw new RemoteException("Ce ticket ne peut pas être résolu");
+				}
+				
+				if (!nomDemandeur.equals(ticket.getAgentId())) {
+					throw new RemoteException("Vous ne pouvez pas résoudre un ticket qui n'est pas le votre");
+				}
+				
+				ticket.setDateResolution(LocalDateTime.now());
+				ticket.setEtat(Etat.RESOLVED);
+				
+				incidentDao.save(ticket);
+				System.out.println("INC >> Ticket : " + idTicket + "résolut par " + ticket.getAgentId());
+			} catch (InterruptedException e) {
+				throw new RemoteException("Modification interrompue par le système", e);
+			} finally {
+				terminerModificationTicket();
 			}
 			
-			if (ticket.getEtat() != Etat.ASSIGNED) {
-				throw new RemoteException("Ce ticket ne peut pas être résolu");
-			}
 			
-			if (!nomDemandeur.equals(ticket.getAgentId())) {
-				throw new RemoteException("Vous ne pouvez pas résoudre un ticket qui n'est pas le votre");
-			}
-			
-			ticket.setDateResolution(LocalDateTime.now());
-			ticket.setEtat(Etat.RESOLVED);
-			
-			incidentDao.save(ticket);
-			System.out.println("INC >> Ticket : " + idTicket + "résolut par " + ticket.getAgentId());
 		} else {
 			throw new RemoteException("Session invalide ou expiré");
 		}
@@ -239,7 +324,16 @@ public class IncidentImpl extends UnicastRemoteObject implements IIncidentServic
 				throw new RemoteException("Accès refusé : Seul un agent a le droit d'afficher les statistiques");
 			}
 			
-			return incidentDao.getStatistiques();
+			try {
+				debuterConsultationTickets();
+				return incidentDao.getStatistiques();
+			} catch (InterruptedException e) {
+				throw new RemoteException("Consultation interrompue par le système", e);
+			} finally {
+				terminerConsultationTickets();
+			}
+			
+			
 			
 		} else {
 			throw new RemoteException("Session invalide ou expirée");
