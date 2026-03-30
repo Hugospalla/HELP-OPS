@@ -1,4 +1,3 @@
-// Fichier : Serveur/src/commons/modele/Statistiques.java
 package commons.modele;
 
 import java.io.Serializable;
@@ -14,7 +13,7 @@ public class Statistiques implements Serializable {
     private Map<String, Integer> ticketsParAgent;
     private Map<String, Double> pressionParAgent;
 
-    // Getters et Setters
+    
     public void setTotalTickets(int totalTickets) { this.totalTickets = totalTickets; }
     public void setTicketsResolus(int ticketsResolus) { this.ticketsResolus = ticketsResolus; }
     public void setTicketsParEtat(Map<String, Integer> ticketsParEtat) { this.ticketsParEtat = ticketsParEtat; }
@@ -22,7 +21,7 @@ public class Statistiques implements Serializable {
     public void setTicketsParAgent(Map<String, Integer> ticketsParAgent) { this.ticketsParAgent = ticketsParAgent; }
     public void setPressionParAgent(Map<String, Double> pressionParAgent) { this.pressionParAgent = pressionParAgent; }
 
-    // Méthode pour afficher joliment le bilan dans le terminal du Client
+    
     public String afficherBilan() {
         StringBuilder sb = new StringBuilder();
         sb.append("\n================================================\n");

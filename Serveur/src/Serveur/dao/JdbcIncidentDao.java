@@ -15,7 +15,7 @@ public class JdbcIncidentDao implements IIncidentDao {
 
     @Override
     public void save(Incident incident) {
-        // AJOUT DE date_resolution DANS LA REQUÊTE
+        
         String query = "INSERT OR REPLACE INTO incidents (id, categorie, titre, description, etat, agent_id, auteur, date_creation, date_assignation, date_resolution) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = DatabaseManager.getConnection();
@@ -31,7 +31,7 @@ public class JdbcIncidentDao implements IIncidentDao {
             pstmt.setString(8, incident.getDateCreation().toString());
             pstmt.setString(9, incident.getDateAssignation() != null ? incident.getDateAssignation().toString() : null);
             
-            // On sauvegarde la date de résolution si elle existe
+            
             pstmt.setString(10, incident.getDateResolution() != null ? incident.getDateResolution().toString() : null);
             
             pstmt.executeUpdate();
