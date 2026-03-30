@@ -114,7 +114,7 @@ public class IncidentImpl extends UnicastRemoteObject implements IIncidentServic
 			Role roleDemandeur = auth.getRoleByToken(token);
 			
 			if(roleDemandeur != Role.UTILISATEUR) {
-				throw new RemoteException("Accès refusé : Seul un agent a le droit d'afficher tous les tickets");
+				throw new RemoteException("Accès refusé : Seul un utilisateur a le droit d'afficher ses tickets");
 			}
 			
 			String demandeur = auth.getLoginByToken(token);
@@ -192,7 +192,7 @@ public class IncidentImpl extends UnicastRemoteObject implements IIncidentServic
 			Role roleDemandeur = auth.getRoleByToken(token);
 			
 			if (roleDemandeur != Role.AGENT) {
-				throw new RemoteException("Accès refusé : Seul un agent a le droit d'afficher tous les tickets");
+				throw new RemoteException("Accès refusé : Seul un agent a le droit d'afficher tous les tickets OPEN");
 			}
 			
 			List<Incident> tous;
@@ -233,7 +233,7 @@ public class IncidentImpl extends UnicastRemoteObject implements IIncidentServic
 			Role roleDemandeur = auth.getRoleByToken(token);
 			
 			if (roleDemandeur != Role.AGENT) {
-				throw new RemoteException("Accès refusé : Seul un agent a le droit d'afficher tous les tickets");
+				throw new RemoteException("Accès refusé : Seul un agent a le droit de prendre en charge un ticket");
 			}
 			
 			try {
@@ -281,7 +281,7 @@ public class IncidentImpl extends UnicastRemoteObject implements IIncidentServic
 			
 			
 			if (roleDemandeur != Role.AGENT) {
-				throw new RemoteException("Accès refusé : Seul un agent a le droit d'afficher tous les tickets");
+				throw new RemoteException("Accès refusé : Seul un agent a le droit de cloturer un ticket");
 			}
 			
 			try {
