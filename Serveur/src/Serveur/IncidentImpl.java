@@ -79,7 +79,7 @@ public class IncidentImpl extends UnicastRemoteObject implements IIncidentServic
 			Role roleDemandeur = auth.getRoleByToken(token);
 			
 			if(roleDemandeur != Role.UTILISATEUR) {
-				throw new RemoteException("Accès refusé : Seul un agent a le droit d'afficher tous les tickets");
+				throw new RemoteException("Accès refusé : Seul un utilisateur a le droit d'afficher tous les tickets");
 			}
 			
 			String ticketAuteur = auth.getLoginByToken(token);
