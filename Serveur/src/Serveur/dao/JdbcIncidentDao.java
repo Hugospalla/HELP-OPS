@@ -83,12 +83,12 @@ public class JdbcIncidentDao implements IIncidentDao {
                         incident.setDateAssignation(LocalDateTime.parse(dateAssignationStr));
                     }
                     
-                    // NOUVEAU : Récupération de la Date de Résolution
+                    
                     String dateResolutionStr = rs.getString("date_resolution");
                     if (dateResolutionStr != null && !dateResolutionStr.isEmpty() && !dateResolutionStr.equals("null")) {
                         incident.setDateResolution(LocalDateTime.parse(dateResolutionStr));
                     } else {
-                        incident.setDateResolution(null); // Par sécurité
+                        incident.setDateResolution(null); 
                     }
                     
                     incidents.add(incident);
@@ -106,27 +106,24 @@ public class JdbcIncidentDao implements IIncidentDao {
         try (Connection conn = DatabaseManager.getConnection();
              java.sql.Statement stmt = conn.createStatement()) {
              
-             // 1. Total des tickets
+
              ResultSet rsTotal = stmt.executeQuery("SELECT COUNT(*) AS total FROM incidents");
              if (rsTotal.next()) stats.setTotalTickets(rsTotal.getInt("total"));
              
-             // 2. Tickets résolus
+
              ResultSet rsResolus = stmt.executeQuery("SELECT COUNT(*) AS resolus FROM incidents WHERE etat = 'RESOLVED'");
              if (rsResolus.next()) stats.setTicketsResolus(rsResolus.getInt("resolus"));
              
-             // 3. Tickets par état
+
              ResultSet rsEtat = stmt.executeQuery("SELECT etat, COUNT(*) AS nb FROM incidents GROUP BY etat");
              java.util.Map<String, Integer> parEtat = new java.util.HashMap<>();
              while (rsEtat.next()) parEtat.put(rsEtat.getString("etat"), rsEtat.getInt("nb"));
              stats.setTicketsParEtat(parEtat);
              
-             // 4. Temps moyen OPEN -> RESOLVED (en minutes)
-             // julianday() convertit une date ISO en nombre de jours. On multiplie par 24 (h) * 60 (min)
              ResultSet rsTemps = stmt.executeQuery("SELECT AVG(julianday(date_resolution) - julianday(date_creation)) * 24 * 60 AS temps_moyen FROM incidents WHERE etat = 'RESOLVED'");
              if (rsTemps.next()) stats.setTempsMoyenResolutionMinutes(rsTemps.getDouble("temps_moyen"));
              
-             // 5 & 6. Tickets par agent ET Taux de pression (tickets par agent par jour)
-             // Pression = nb_tickets_de_lagent / nb_jours_depuis_sa_premiere_assignation (avec un minimum de 1 jour pour éviter la division par zéro)
+            
              String sqlAgent = "SELECT agent_id, COUNT(*) AS nb, "
                      + "(COUNT(*) / MAX(1.0, julianday('now', 'localtime') - julianday(MIN(date_assignation)))) AS pression "
                      + "FROM incidents WHERE agent_id IS NOT NULL GROUP BY agent_id";
