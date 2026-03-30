@@ -1,3 +1,6 @@
-/commons/
-/Serveur/
+/.DS_Store
 /Client/
+/Serveur/
+/commons/
+/lib/
+/module-info.class
