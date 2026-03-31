@@ -90,7 +90,7 @@ public class IncidentImpl extends UnicastRemoteObject implements IIncidentServic
 			try {
 				debuterModificationTicket();
 				incidentDao.save(ticket);
-				supervisionManager.publierEvenement("[NOUVEAU] Ticket '" + titre + "' créer par " + ticketAuteur + " (Etat: OPEN)");
+				supervisionManager.publierEvenement("[NOUVEAU] Ticket '" + titre + "' créé par " + ticketAuteur + " (Etat: OPEN)");
 			}catch (InterruptedException e) {
 				throw new RemoteException("Création interrompue par le système", e);
 			} finally {
@@ -306,7 +306,7 @@ public class IncidentImpl extends UnicastRemoteObject implements IIncidentServic
 				
 				incidentDao.save(ticket);
 				supervisionManager.publierEvenement("[RESOLUTION] Ticket '" + ticket.getTitre() + "' clôturé par " + auth.getLoginByToken(token));
-				System.out.println("INC >> Ticket : " + idTicket + "résolut par " + ticket.getAgentId());
+				System.out.println("INC >> Ticket : " + idTicket + " résolu par " + ticket.getAgentId());
 			} catch (InterruptedException e) {
 				throw new RemoteException("Modification interrompue par le système", e);
 			} finally {
