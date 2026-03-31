@@ -1,6 +1,7 @@
 package Serveur;
 
 import Serveur.dao.IIncidentDao;
+import Serveur.supervision.SupervisionManager;
 import commons.interfaces.IAuthService;
 import commons.interfaces.IIncidentService;
 import commons.modele.Categorie;
@@ -18,6 +19,7 @@ import java.util.UUID;
 public class IncidentImpl extends UnicastRemoteObject implements IIncidentService{
 
 	private IIncidentDao incidentDao;
+	private SupervisionManager supervisionManager;
 	
 	private int consultationsEnCours = 0;
 	private boolean modificationTicketEnCours = false;
@@ -51,9 +53,10 @@ public class IncidentImpl extends UnicastRemoteObject implements IIncidentServic
 		notifyAll();
 	}
 	
-	public IncidentImpl(IIncidentDao incidentDao) throws RemoteException {
+	public IncidentImpl(IIncidentDao incidentDao, SupervisionManager supervisionManager) throws RemoteException {
 		super();
 		this.incidentDao = incidentDao;
+		this.supervisionManager = supervisionManager;
 	}
 	
 	private IAuthService getAuth() {
@@ -76,7 +79,7 @@ public class IncidentImpl extends UnicastRemoteObject implements IIncidentServic
 			Role roleDemandeur = auth.getRoleByToken(token);
 			
 			if(roleDemandeur != Role.UTILISATEUR) {
-				throw new RemoteException("Accès refusé : Seul un agent a le droit d'afficher tous les tickets");
+				throw new RemoteException("Accès refusé : Seul un utilisateur a le droit de créer un ticket");
 			}
 			
 			String ticketAuteur = auth.getLoginByToken(token);
@@ -87,6 +90,7 @@ public class IncidentImpl extends UnicastRemoteObject implements IIncidentServic
 			try {
 				debuterModificationTicket();
 				incidentDao.save(ticket);
+				supervisionManager.publierEvenement("[NOUVEAU] Ticket '" + titre + "' créé par " + ticketAuteur + " (Etat: OPEN)");
 			}catch (InterruptedException e) {
 				throw new RemoteException("Création interrompue par le système", e);
 			} finally {
@@ -110,7 +114,7 @@ public class IncidentImpl extends UnicastRemoteObject implements IIncidentServic
 			Role roleDemandeur = auth.getRoleByToken(token);
 			
 			if(roleDemandeur != Role.UTILISATEUR) {
-				throw new RemoteException("Accès refusé : Seul un agent a le droit d'afficher tous les tickets");
+				throw new RemoteException("Accès refusé : Seul un utilisateur a le droit d'afficher ses tickets");
 			}
 			
 			String demandeur = auth.getLoginByToken(token);
@@ -188,7 +192,7 @@ public class IncidentImpl extends UnicastRemoteObject implements IIncidentServic
 			Role roleDemandeur = auth.getRoleByToken(token);
 			
 			if (roleDemandeur != Role.AGENT) {
-				throw new RemoteException("Accès refusé : Seul un agent a le droit d'afficher tous les tickets");
+				throw new RemoteException("Accès refusé : Seul un agent a le droit d'afficher tous les tickets OPEN");
 			}
 			
 			List<Incident> tous;
@@ -229,7 +233,7 @@ public class IncidentImpl extends UnicastRemoteObject implements IIncidentServic
 			Role roleDemandeur = auth.getRoleByToken(token);
 			
 			if (roleDemandeur != Role.AGENT) {
-				throw new RemoteException("Accès refusé : Seul un agent a le droit d'afficher tous les tickets");
+				throw new RemoteException("Accès refusé : Seul un agent a le droit de prendre en charge un ticket");
 			}
 			
 			try {
@@ -249,6 +253,7 @@ public class IncidentImpl extends UnicastRemoteObject implements IIncidentServic
 				
 				
 				incidentDao.save(ticket);
+				supervisionManager.publierEvenement("[ASSIGNATION] Ticket '" + ticket.getTitre() + "' pris en charge par " + auth.getLoginByToken(token));
 				System.out.println("INC >> Ticket : " + idTicket + "assigné à " + ticket.getAgentId());
 			} catch (InterruptedException e) {
 				throw new RemoteException("Modification interrompue par le système", e);
@@ -276,7 +281,7 @@ public class IncidentImpl extends UnicastRemoteObject implements IIncidentServic
 			
 			
 			if (roleDemandeur != Role.AGENT) {
-				throw new RemoteException("Accès refusé : Seul un agent a le droit d'afficher tous les tickets");
+				throw new RemoteException("Accès refusé : Seul un agent a le droit de cloturer un ticket");
 			}
 			
 			try {
@@ -300,7 +305,8 @@ public class IncidentImpl extends UnicastRemoteObject implements IIncidentServic
 				ticket.setEtat(Etat.RESOLVED);
 				
 				incidentDao.save(ticket);
-				System.out.println("INC >> Ticket : " + idTicket + "résolut par " + ticket.getAgentId());
+				supervisionManager.publierEvenement("[RESOLUTION] Ticket '" + ticket.getTitre() + "' clôturé par " + auth.getLoginByToken(token));
+				System.out.println("INC >> Ticket : " + idTicket + " résolu par " + ticket.getAgentId());
 			} catch (InterruptedException e) {
 				throw new RemoteException("Modification interrompue par le système", e);
 			} finally {
