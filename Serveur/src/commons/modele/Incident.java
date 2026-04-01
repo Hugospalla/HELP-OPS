@@ -29,7 +29,7 @@ public class Incident implements Serializable{
 		this.agentId = null;
 		this.dateAssignation = null;
 		this.dateCreation = LocalDateTime.now();
-		this.dateResolution = LocalDateTime.now();
+		this.dateResolution = null;
 		this.messageResolution = null;
 	}
 	
