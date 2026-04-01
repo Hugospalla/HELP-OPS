@@ -17,6 +17,7 @@ public class Incident implements Serializable{
 	private LocalDateTime dateCreation;
 	private LocalDateTime dateAssignation;
 	private LocalDateTime dateResolution;
+	private String messageResolution;
 	
 	public Incident(String id, Categorie categorie, String titre, String desc, String auteur) {
 		this.id = id;
@@ -29,6 +30,7 @@ public class Incident implements Serializable{
 		this.dateAssignation = null;
 		this.dateCreation = LocalDateTime.now();
 		this.dateResolution = LocalDateTime.now();
+		this.messageResolution = null;
 	}
 	
 	public String getId() {
@@ -87,11 +89,25 @@ public class Incident implements Serializable{
 		this.dateResolution = dateResolution;
 	}
 	
+	public String getMessageResolution() {
+		return messageResolution;
+	}
+	
+	public void setMessageResolution(String messageResolution) {
+		this.messageResolution = messageResolution;
+	}
+	
 	@Override
     public String toString() {
 		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm ");
 		String dateFormatee = this.dateCreation.format(formatter);
 		
-        return "[" + this.id.substring(0, 8) + "...] " + " | Date création: " + dateFormatee + " | Titre: "  + this.titre + " | Cat: " + this.categorie + " | Etat: " + this.etat +  " | Desc: " + this.desc + " | Auteur: " + this.auteur;
+        String chaine =  "[" + this.id.substring(0, 8) + "...] " + " | Date création: " + dateFormatee + " | Titre: "  + this.titre + " | Cat: " + this.categorie + " | Etat: " + this.etat +  " | Desc: " + this.desc + " | Auteur: " + this.auteur;
+        
+        if (this.etat == Etat.RESOLVED && this.messageResolution != null) {
+        	chaine += "\n Résolu avec le message : " + this.messageResolution;
+        }
+        
+        return chaine;
     }
 }
