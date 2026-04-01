@@ -6,6 +6,7 @@ import commons.modele.AuthResponse;
 import commons.modele.Categorie;
 import commons.modele.Incident;
 import commons.modele.Role;
+import commons.modele.Statistiques;
 import java.rmi.Naming;
 import java.rmi.RemoteException;
 import java.util.List;
@@ -52,7 +53,6 @@ public class Client {
             System.out.print("Entrez votre login : ");
             String login = sc.nextLine();
             
-           
             System.out.print("Entrez votre mot de passe : ");
             String password = sc.nextLine();
         
@@ -99,7 +99,7 @@ public class Client {
             System.out.println("\n--- MENU AGENT ---");
             System.out.println("1. Lister les tickets en attente (OPEN) pour prise en charge");
             System.out.println("2. Voir MES tickets en cours (ASSIGNED) pour résolution");
-            System.out.println("3. Voir les Statistiques de la plateforme"); // NOUVEAU
+            System.out.println("3. Voir les Statistiques de la plateforme");
             System.out.println("4. Quitter");
         }
         System.out.print("Votre choix : ");
@@ -214,9 +214,10 @@ public class Client {
             System.out.println(">> Erreur : " + e.getMessage());
         }
     }
+
     private static void actionVoirStatistiques() {
         try {
-            commons.modele.Statistiques stats = incidentService.obtenirStatistiques(monToken);
+            Statistiques stats = incidentService.obtenirStatistiques(monToken);
             if (stats != null) {
                 System.out.println(stats.afficherBilan());
             } else {
@@ -320,7 +321,11 @@ public class Client {
                             String action = sc.nextLine().trim();
                             
                             if (action.equals("1")) {
-                                incidentService.cloturerTicket(monToken, ticketVise.getId());
+                                System.out.print("Saisissez votre message de résolution : ");
+                                String msgResolution = sc.nextLine().trim();
+                                
+                                incidentService.cloturerTicket(monToken, ticketVise.getId(), msgResolution);
+                                
                                 System.out.println(">> Succès ! Vous avez résolu ce ticket.");
                                 resterDansVue = false;
                             }

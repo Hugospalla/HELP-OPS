@@ -269,7 +269,7 @@ public class IncidentImpl extends UnicastRemoteObject implements IIncidentServic
 	}
 	
 	@Override
-	public void cloturerTicket(String token, String idTicket) throws RemoteException {
+	public void cloturerTicket(String token, String idTicket, String messageResolution) throws RemoteException {
 		
 		IAuthService auth = getAuth();
 		if (auth == null) throw new RemoteException("Service d'authentification indisponible");
@@ -303,6 +303,7 @@ public class IncidentImpl extends UnicastRemoteObject implements IIncidentServic
 				
 				ticket.setDateResolution(LocalDateTime.now());
 				ticket.setEtat(Etat.RESOLVED);
+				ticket.setMessageResolution(messageResolution);
 				
 				incidentDao.save(ticket);
 				supervisionManager.publierEvenement("[RESOLUTION] Ticket '" + ticket.getTitre() + "' clôturé par " + auth.getLoginByToken(token));

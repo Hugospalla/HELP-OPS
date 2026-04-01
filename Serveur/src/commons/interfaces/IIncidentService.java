@@ -19,7 +19,8 @@ public interface IIncidentService extends java.rmi.Remote{
 	
 	public void prendreEnChargeTicket(String token, String idTicket) throws RemoteException;
 	
-	public void cloturerTicket(String token, String idTicket) throws RemoteException;
+	public void cloturerTicket(String token, String idTicket, String messageResolution) throws RemoteException;
+	
 	public commons.modele.Statistiques obtenirStatistiques(String token) throws RemoteException;
 }
 
