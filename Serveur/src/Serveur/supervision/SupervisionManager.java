@@ -28,7 +28,7 @@ public class SupervisionManager {
 	}
 	
 	public void publierEvenement(String evenement) {
-		System.out.println("STEAM >>" + evenement);
+		System.out.println("STREAM >>" + evenement);
 		
 		synchronized (historique) {
 			if (historique.size() >= MAX_HISTORY) {
