@@ -395,6 +395,57 @@ public class IncidentImpl extends UnicastRemoteObject implements IIncidentServic
 	        throw new RemoteException("Session invalide ou expirée");
 	    }
 	}
+	@Override
+	public void reassignerTicket(String token, String idTicket, String nouvelAgent) throws RemoteException {
+	    IAuthService auth = getAuth();
+	    if (auth == null) throw new RemoteException("Service d'authentification indisponible");
+	    
+	    if (auth.isTokenValid(token)) {
+	        Role roleDemandeur = auth.getRoleByToken(token);
+	        String loginAgentActuel = auth.getLoginByToken(token);
+	        
+	        if (roleDemandeur != Role.AGENT) {
+	            throw new RemoteException("Seul un agent peut réassigner un ticket.");
+	        }
+	        
+	        Incident ticket;
+	        try {
+	            debuterModificationTicket(); 
+	            ticket = incidentDao.getIncidentsById(idTicket);
+	            
+	            if (ticket == null) throw new RemoteException("Le ticket n'existe pas");
+	            if (ticket.getEtat() != Etat.ASSIGNED) throw new RemoteException("Le ticket doit être en cours (ASSIGNED)");
+	            if (!loginAgentActuel.equals(ticket.getAgentId())) throw new RemoteException("Ce ticket ne vous est pas assigné.");
+	            
+	            // Ajout de la trace dans l'historique du ticket
+	            String dateDuJour = LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM HH:mm"));
+	            String noteTexte = " [" + dateDuJour + "] [TRANSFERT] Assignation transférée de '" + loginAgentActuel + "' à '" + nouvelAgent + "'.";
+	            
+	            if (ticket.getMessageSuivi() == null || ticket.getMessageSuivi().isEmpty()) {
+	                ticket.setMessageSuivi(noteTexte);
+	            } else {
+	                ticket.setMessageSuivi(ticket.getMessageSuivi() + "\n" + noteTexte);
+	            }
+	            
+	            // Changement de l'agent (le ticket reste en ASSIGNED)
+	            ticket.setAgentId(nouvelAgent);
+	            incidentDao.save(ticket);
+	            
+	        } catch (InterruptedException e) {
+	            throw new RemoteException("Modification interrompue", e);
+	        } finally {
+	            terminerModificationTicket();
+	        }
+	        
+	        // Notification au superviseur
+	        try {
+	            supervision.notifierEvenement("[TRANSFERT] Le ticket '" + ticket.getTitre() + "' a été réassigné de " + loginAgentActuel + " à " + nouvelAgent);
+	        } catch (Exception e) {}
+	        
+	    } else {
+	        throw new RemoteException("Session invalide ou expirée");
+	    }
+	}
 }
 	
 

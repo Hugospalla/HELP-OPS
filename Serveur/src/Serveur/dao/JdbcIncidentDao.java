@@ -31,10 +31,9 @@ public class JdbcIncidentDao implements IIncidentDao {
             pstmt.setString(8, incident.getDateCreation().toString());
             pstmt.setString(9, incident.getDateAssignation() != null ? incident.getDateAssignation().toString() : null);
             
-            
             pstmt.setString(10, incident.getDateResolution() != null ? incident.getDateResolution().toString() : null);
-            pstmt.setString(11, incident.getMessageResolution()  != null ? incident.getMessageResolution().toString() : null);
-            pstmt.setString(12, incident.getMessageSuivi() != null ? incident.getMessageSuivi().toString() : null);
+            pstmt.setString(11, incident.getMessageResolution() != null ? incident.getMessageResolution() : null);
+            pstmt.setString(12, incident.getMessageSuivi() != null ? incident.getMessageSuivi() : null);
             
             pstmt.executeUpdate();
         } catch (SQLException e) {
@@ -90,7 +89,6 @@ public class JdbcIncidentDao implements IIncidentDao {
                         incident.setDateAssignation(LocalDateTime.parse(dateAssignationStr));
                     }
                     
-                    
                     String dateResolutionStr = rs.getString("date_resolution");
                     if (dateResolutionStr != null && !dateResolutionStr.isEmpty() && !dateResolutionStr.equals("null")) {
                         incident.setDateResolution(LocalDateTime.parse(dateResolutionStr));
@@ -99,7 +97,6 @@ public class JdbcIncidentDao implements IIncidentDao {
                     }
                     
                     incident.setMessageResolution(rs.getString("message_resolution"));
-                    
                     incident.setMessageSuivi(rs.getString("message_suivi"));
                     
                     incidents.add(incident);
@@ -110,6 +107,8 @@ public class JdbcIncidentDao implements IIncidentDao {
         }
         return incidents;
     }
+
+    // NOUVELLE MÉTHODE V-PRO PARFAITEMENT ÉQUILIBRÉE
     @Override
     public commons.modele.Statistiques getStatistiques() {
         commons.modele.Statistiques stats = new commons.modele.Statistiques();
@@ -117,38 +116,67 @@ public class JdbcIncidentDao implements IIncidentDao {
         try (Connection conn = DatabaseManager.getConnection();
              java.sql.Statement stmt = conn.createStatement()) {
              
-
+             // 1. Total des tickets
              ResultSet rsTotal = stmt.executeQuery("SELECT COUNT(*) AS total FROM incidents");
-             if (rsTotal.next()) stats.setTotalTickets(rsTotal.getInt("total"));
+             int totalTickets = 0;
+             if (rsTotal.next()) {
+                 totalTickets = rsTotal.getInt("total");
+                 stats.setTotalTickets(totalTickets);
+             }
              
-
+             // 2. Tickets résolus
              ResultSet rsResolus = stmt.executeQuery("SELECT COUNT(*) AS resolus FROM incidents WHERE etat = 'RESOLVED'");
              if (rsResolus.next()) stats.setTicketsResolus(rsResolus.getInt("resolus"));
              
-
+             // 3. Tickets par état
              ResultSet rsEtat = stmt.executeQuery("SELECT etat, COUNT(*) AS nb FROM incidents GROUP BY etat");
              java.util.Map<String, Integer> parEtat = new java.util.HashMap<>();
              while (rsEtat.next()) parEtat.put(rsEtat.getString("etat"), rsEtat.getInt("nb"));
              stats.setTicketsParEtat(parEtat);
              
+             // 4. Volume global (Moyenne par jour et semaine)
+             ResultSet rsVolume = stmt.executeQuery("SELECT MAX(1.0, julianday('now', 'localtime') - julianday(MIN(date_creation))) AS jours_actifs FROM incidents");
+             if (rsVolume.next() && totalTickets > 0) {
+                 double joursActifs = rsVolume.getDouble("jours_actifs");
+                 stats.setMoyenneTicketsParJour(totalTickets / joursActifs);
+                 stats.setMoyenneTicketsParSemaine((totalTickets / joursActifs) * 7);
+             }
+             
+             // 5. Temps moyen OPEN -> RESOLVED (Global)
              ResultSet rsTemps = stmt.executeQuery("SELECT AVG(julianday(date_resolution) - julianday(date_creation)) * 24 * 60 AS temps_moyen FROM incidents WHERE etat = 'RESOLVED'");
              if (rsTemps.next()) stats.setTempsMoyenResolutionMinutes(rsTemps.getDouble("temps_moyen"));
              
-            
-             String sqlAgent = "SELECT agent_id, COUNT(*) AS nb, "
+             // 6. Analyse détaillée par agent
+             ResultSet rsTotalAssignes = stmt.executeQuery("SELECT COUNT(*) AS total_assignes FROM incidents WHERE agent_id IS NOT NULL");
+             int totalAssignesGlobal = 1; // Pour éviter la division par zéro
+             if (rsTotalAssignes.next() && rsTotalAssignes.getInt("total_assignes") > 0) {
+                 totalAssignesGlobal = rsTotalAssignes.getInt("total_assignes");
+             }
+             
+             String sqlAgent = "SELECT agent_id, "
+                     + "COUNT(*) AS total_assignes, "
+                     + "SUM(CASE WHEN etat = 'RESOLVED' THEN 1 ELSE 0 END) AS resolus, "
+                     + "AVG(CASE WHEN etat = 'RESOLVED' THEN (julianday(date_resolution) - julianday(date_creation)) * 24 * 60 ELSE NULL END) AS temps_moyen_min, "
                      + "(COUNT(*) / MAX(1.0, julianday('now', 'localtime') - julianday(MIN(date_assignation)))) AS pression "
                      + "FROM incidents WHERE agent_id IS NOT NULL GROUP BY agent_id";
+                     
              ResultSet rsAgent = stmt.executeQuery(sqlAgent);
+             java.util.Map<String, commons.modele.Statistiques.AgentStats> mapAgents = new java.util.HashMap<>();
              
-             java.util.Map<String, Integer> parAgent = new java.util.HashMap<>();
-             java.util.Map<String, Double> pression = new java.util.HashMap<>();
              while (rsAgent.next()) {
-                 String agentId = rsAgent.getString("agent_id");
-                 parAgent.put(agentId, rsAgent.getInt("nb"));
-                 pression.put(agentId, rsAgent.getDouble("pression"));
+                 commons.modele.Statistiques.AgentStats agStats = new commons.modele.Statistiques.AgentStats();
+                 agStats.ticketsAssignes = rsAgent.getInt("total_assignes");
+                 agStats.ticketsResolus = rsAgent.getInt("resolus");
+                 agStats.tempsMoyenMin = rsAgent.getDouble("temps_moyen_min");
+                 agStats.pressionJour = rsAgent.getDouble("pression");
+                 
+                 // Calculs des pourcentages de performances
+                 agStats.pourcentageCharge = ((double) agStats.ticketsAssignes / totalAssignesGlobal) * 100.0;
+                 agStats.tauxResolution = agStats.ticketsAssignes > 0 ? ((double) agStats.ticketsResolus / agStats.ticketsAssignes) * 100.0 : 0.0;
+                 
+                 mapAgents.put(rsAgent.getString("agent_id"), agStats);
              }
-             stats.setTicketsParAgent(parAgent);
-             stats.setPressionParAgent(pression);
+             stats.setStatsParAgent(mapAgents);
              
         } catch (SQLException e) {
             System.err.println("Erreur SQL lors du calcul des statistiques : " + e.getMessage());

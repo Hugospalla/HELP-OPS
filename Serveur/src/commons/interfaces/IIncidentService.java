@@ -24,5 +24,9 @@ public interface IIncidentService extends java.rmi.Remote{
 	public void ajouterMessageSuivi(String token, String idTicket, String message) throws RemoteException;
 	
 	public commons.modele.Statistiques obtenirStatistiques(String token) throws RemoteException;
+
+	public void reassignerTicket(String token, String idTicket, String nouvelAgent) throws RemoteException;
+	
+
 }
 

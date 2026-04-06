@@ -323,7 +323,7 @@ public class Client {
                             System.out.println(ticketVise.toString());
                             System.out.println("-------------------------");
                             
-                            System.out.print("\n1. Résoudre ce ticket\n2. Ajouter un message de suivi\n3. Revenir à la liste\nVotre choix : ");
+                            System.out.print("\n1. Résoudre ce ticket\n2. Ajouter un message de suivi\n3. Réassigner ce ticket à un collègue\n4. Revenir à la liste\nVotre choix : ");
                             String action = sc.nextLine().trim();
                             
                             if (action.equals("1")) {
@@ -342,6 +342,18 @@ public class Client {
                                 
                                 System.out.println(">> Succès ! Message de suivi ajouté.");
                             } else if (action.equals("3")) {
+                                // NOUVELLE OPTION DE TRANSFERT
+                                System.out.print("Saisissez le login du nouvel agent (ex: admin2) : ");
+                                String nouvelAgent = sc.nextLine().trim();
+                                
+                                if (!nouvelAgent.isEmpty()) {
+                                    incidentService.reassignerTicket(monToken, ticketVise.getId(), nouvelAgent);
+                                    System.out.println(">> Succès ! Le ticket a été transféré à " + nouvelAgent + ".");
+                                    resterDansVue = false; // Le ticket n'est plus à nous, on recharge la vue
+                                } else {
+                                    System.out.println(">> Erreur : Le login ne peut pas être vide.");
+                                }
+                            } else if (action.equals("4")) {
                                 resterDansVue = false;
                             } else {
                                 System.out.println(">> Erreur : Choix invalide.");
@@ -360,4 +372,5 @@ public class Client {
             System.out.println(">> Erreur : " + e.getMessage());
         }
     }
+    
 }
