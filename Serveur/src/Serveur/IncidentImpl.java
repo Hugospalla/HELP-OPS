@@ -1,9 +1,9 @@
 package Serveur;
 
 import Serveur.dao.IIncidentDao;
-import Serveur.supervision.SupervisionManager;
 import commons.interfaces.IAuthService;
 import commons.interfaces.IIncidentService;
+import commons.interfaces.ISupervisionInternal;
 import commons.modele.Categorie;
 import commons.modele.Etat;
 import commons.modele.Incident;
@@ -19,7 +19,7 @@ import java.util.UUID;
 public class IncidentImpl extends UnicastRemoteObject implements IIncidentService{
 
 	private IIncidentDao incidentDao;
-	private SupervisionManager supervisionManager;
+	private ISupervisionInternal supervision;
 	
 	private int consultationsEnCours = 0;
 	private boolean modificationTicketEnCours = false;
@@ -53,10 +53,10 @@ public class IncidentImpl extends UnicastRemoteObject implements IIncidentServic
 		notifyAll();
 	}
 	
-	public IncidentImpl(IIncidentDao incidentDao, SupervisionManager supervisionManager) throws RemoteException {
+	public IncidentImpl(IIncidentDao incidentDao, ISupervisionInternal sup) throws RemoteException {
 		super();
 		this.incidentDao = incidentDao;
-		this.supervisionManager = supervisionManager;
+		this.supervision = sup;
 	}
 	
 	private IAuthService getAuth() {
@@ -90,7 +90,7 @@ public class IncidentImpl extends UnicastRemoteObject implements IIncidentServic
 			try {
 				debuterModificationTicket();
 				incidentDao.save(ticket);
-				supervisionManager.publierEvenement("[NOUVEAU] Ticket '" + titre + "' créé par " + ticketAuteur + " (Etat: OPEN)");
+				supervision.notifierEvenement("[NOUVEAU] Ticket '" + titre + "' créé par " + ticketAuteur + " (Etat: OPEN)");
 			}catch (InterruptedException e) {
 				throw new RemoteException("Création interrompue par le système", e);
 			} finally {
@@ -253,7 +253,7 @@ public class IncidentImpl extends UnicastRemoteObject implements IIncidentServic
 				
 				
 				incidentDao.save(ticket);
-				supervisionManager.publierEvenement("[ASSIGNATION] Ticket '" + ticket.getTitre() + "' pris en charge par " + auth.getLoginByToken(token));
+				supervision.notifierEvenement("[ASSIGNATION] Ticket '" + ticket.getTitre() + "' pris en charge par " + auth.getLoginByToken(token));
 				System.out.println("INC >> Ticket : " + idTicket + "assigné à " + ticket.getAgentId());
 			} catch (InterruptedException e) {
 				throw new RemoteException("Modification interrompue par le système", e);
@@ -306,7 +306,7 @@ public class IncidentImpl extends UnicastRemoteObject implements IIncidentServic
 				ticket.setMessageResolution(messageResolution);
 				
 				incidentDao.save(ticket);
-				supervisionManager.publierEvenement("[RESOLUTION] Ticket '" + ticket.getTitre() + "' clôturé par " + auth.getLoginByToken(token));
+				supervision.notifierEvenement("[RESOLUTION] Ticket '" + ticket.getTitre() + "' clôturé par " + auth.getLoginByToken(token));
 				System.out.println("INC >> Ticket : " + idTicket + " résolu par " + ticket.getAgentId());
 			} catch (InterruptedException e) {
 				throw new RemoteException("Modification interrompue par le système", e);

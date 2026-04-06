@@ -24,28 +24,34 @@ public class Client {
     private static Scanner sc;
 
     public static void main(String[] args) {
-        try {
-            initialiserConnexion();
-            
-            System.out.println("===============================");
-            System.out.println("   BIENVENUE SUR HELP'OPS   ");
-            System.out.println("===============================");
-            
-            authentifier();
-            lancerMenuPrincipal();
-            
-            sc.close();
-            
-        } catch (Exception e) {
-            System.err.println("ERREUR CRITIQUE DE CONNEXION AU SERVEUR : " + e.getMessage());
-            e.printStackTrace(); 
-        }
+        initialiserConnexion();
+        
+        System.out.println("===============================");
+        System.out.println("   BIENVENUE SUR HELP'OPS   ");
+        System.out.println("===============================");
+        
+        authentifier();
+        lancerMenuPrincipal();
+        
+        if (sc != null) sc.close();
     }
 
-    private static void initialiserConnexion() throws Exception {
-        authService = (IAuthService) Naming.lookup("rmi://localhost:1099/AuthService");
-        incidentService = (IIncidentService) Naming.lookup("rmi://localhost:1099/IncidentService");
+    private static void initialiserConnexion() {
         sc = new Scanner(System.in);
+        boolean serveursPrets = false;
+        System.out.println(">> Connexion à l'infrastructure HELP'OPS en cours...");
+        
+        while (!serveursPrets) {
+            try {
+                authService = (IAuthService) Naming.lookup("rmi://localhost:1099/AuthService");
+                incidentService = (IIncidentService) Naming.lookup("rmi://localhost:1099/IncidentService");
+                serveursPrets = true; 
+            } catch (Exception e) {
+                System.out.println(">> Blocage RMI : " + e.getMessage());
+                System.out.println(">> En attente du démarrage... (Nouvel essai dans 3s)");
+                try { Thread.sleep(3000); } catch (InterruptedException ie) {}
+            }
+        }
     }
 
     private static void authentifier() {
