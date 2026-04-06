@@ -34,6 +34,7 @@ public class DatabaseManager {
                 + "date_assignation TEXT, "
                 + "date_resolution TEXT, " 
                 + "message_resolution TEXT,"
+                + "message_suivi TEXT,"
                 + "FOREIGN KEY (auteur) REFERENCES users(login), "
                 + "FOREIGN KEY (agent_id) REFERENCES users(login)"
                 + ");";

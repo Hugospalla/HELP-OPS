@@ -39,6 +39,7 @@ public class Client {
     private static void initialiserConnexion() {
         sc = new Scanner(System.in);
         boolean serveursPrets = false;
+        
         System.out.println(">> Connexion à l'infrastructure HELP'OPS en cours...");
         
         while (!serveursPrets) {
@@ -47,8 +48,7 @@ public class Client {
                 incidentService = (IIncidentService) Naming.lookup("rmi://localhost:1099/IncidentService");
                 serveursPrets = true; 
             } catch (Exception e) {
-                System.out.println(">> Blocage RMI : " + e.getMessage());
-                System.out.println(">> En attente du démarrage... (Nouvel essai dans 3s)");
+                System.out.println(">> En attente du démarrage des serveurs (Auth et Incidents)... (Nouvel essai dans 3s)");
                 try { Thread.sleep(3000); } catch (InterruptedException ie) {}
             }
         }
@@ -191,7 +191,7 @@ public class Client {
                 
                 for (int i = 0; i < dernieresRecherches.size(); i++) {
                     Incident t = dernieresRecherches.get(i);
-                    System.out.println(i + " -> [" + t.getEtat() + "] " + t.getTitre());
+                    System.out.println(i + " -> [" + t.getEtat() + "] " + t.getTitre() + " (ID: " + t.getId().substring(0, 8) + " | Cat: " + t.getCategorie() + ")");
                 }
                 
                 System.out.print("\nEntrez le NUMÉRO du ticket pour voir les détails (ou 'q' pour retourner au menu) : ");
@@ -250,7 +250,7 @@ public class Client {
                 
                 for (int i = 0; i < dernieresRecherches.size(); i++) {
                     Incident t = dernieresRecherches.get(i);
-                    System.out.println(i + " -> [" + t.getEtat() + "] " + t.getTitre());
+                    System.out.println(i + " -> [" + t.getEtat() + "] " + t.getTitre() + " (ID: " + t.getId().substring(0, 8) + " | Par: " + t.getAuteur() + ")");
                 }
                 
                 System.out.print("\nEntrez le NUMÉRO du ticket pour voir les détails (ou 'q' pour retourner au menu) : ");
@@ -306,7 +306,7 @@ public class Client {
                 
                 for (int i = 0; i < dernieresRecherches.size(); i++) {
                     Incident t = dernieresRecherches.get(i);
-                    System.out.println(i + " -> [" + t.getEtat() + "] " + t.getTitre());
+                    System.out.println(i + " -> [" + t.getEtat() + "] " + t.getTitre() + " (ID: " + t.getId().substring(0, 8) + " | Par: " + t.getAuteur() + ")");
                 }
                 
                 System.out.print("\nEntrez le NUMÉRO du ticket pour voir les détails (ou 'q' pour retourner au menu) : ");
@@ -323,7 +323,7 @@ public class Client {
                             System.out.println(ticketVise.toString());
                             System.out.println("-------------------------");
                             
-                            System.out.print("\n1. Résoudre ce ticket\n2. Revenir à la liste\nVotre choix : ");
+                            System.out.print("\n1. Résoudre ce ticket\n2. Ajouter un message de suivi\n3. Revenir à la liste\nVotre choix : ");
                             String action = sc.nextLine().trim();
                             
                             if (action.equals("1")) {
@@ -334,6 +334,17 @@ public class Client {
                                 
                                 System.out.println(">> Succès ! Vous avez résolu ce ticket.");
                                 resterDansVue = false;
+                            } else if (action.equals("2")) {
+                                System.out.print("Saisissez votre message de suivi : ");
+                                String msgSuivi = sc.nextLine().trim();
+                                
+                                incidentService.ajouterMessageSuivi(monToken, ticketVise.getId(), msgSuivi);
+                                
+                                System.out.println(">> Succès ! Message de suivi ajouté.");
+                            } else if (action.equals("3")) {
+                                resterDansVue = false;
+                            } else {
+                                System.out.println(">> Erreur : Choix invalide.");
                             }
                         } else {
                             System.out.println(">> Erreur : Numéro hors limite.");

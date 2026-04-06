@@ -18,6 +18,7 @@ public class Incident implements Serializable{
 	private LocalDateTime dateAssignation;
 	private LocalDateTime dateResolution;
 	private String messageResolution;
+	private String messageSuivi;
 	
 	public Incident(String id, Categorie categorie, String titre, String desc, String auteur) {
 		this.id = id;
@@ -31,6 +32,7 @@ public class Incident implements Serializable{
 		this.dateCreation = LocalDateTime.now();
 		this.dateResolution = null;
 		this.messageResolution = null;
+		this.messageSuivi = null;
 	}
 	
 	public String getId() {
@@ -97,6 +99,15 @@ public class Incident implements Serializable{
 		this.messageResolution = messageResolution;
 	}
 	
+	public String getMessageSuivi() {
+		return messageSuivi;
+	}
+	
+	public void setMessageSuivi(String messageSuivi) {
+		this.messageSuivi = messageSuivi;
+	}
+	
+	
 	@Override
     public String toString() {
 		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm ");
@@ -104,8 +115,18 @@ public class Incident implements Serializable{
 		
         String chaine =  "[" + this.id.substring(0, 8) + "...] " + " | Date création: " + dateFormatee + " | Titre: "  + this.titre + " | Cat: " + this.categorie + " | Etat: " + this.etat +  " | Desc: " + this.desc + " | Auteur: " + this.auteur;
         
-        if (this.etat == Etat.RESOLVED && this.messageResolution != null) {
-        	chaine += "\n Résolu avec le message : " + this.messageResolution;
+        if (this.etat == Etat.RESOLVED) {
+			if (this.dateResolution != null) {
+				String dateResoFormatee = this.dateResolution.format(formatter);
+				chaine += "\n - CLÔTURÉ LE : " + dateResoFormatee;
+			}
+			if (this.messageResolution != null && !this.messageResolution.isEmpty()) {
+				chaine += "\n - MESSAGE RÉSOLUTION : " + this.messageResolution;
+			}
+		}
+        
+        if (this.etat != Etat.RESOLVED && this.messageSuivi != null && !this.messageSuivi.isEmpty()) {
+        	chaine += "\n - Message de suivi : " + this.messageSuivi;
         }
         
         return chaine;

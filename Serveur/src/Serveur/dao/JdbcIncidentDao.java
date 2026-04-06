@@ -16,7 +16,7 @@ public class JdbcIncidentDao implements IIncidentDao {
     @Override
     public void save(Incident incident) {
         
-        String query = "INSERT OR REPLACE INTO incidents (id, categorie, titre, description, etat, agent_id, auteur, date_creation, date_assignation, date_resolution, message_resolution) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)";
+        String query = "INSERT OR REPLACE INTO incidents (id, categorie, titre, description, etat, agent_id, auteur, date_creation, date_assignation, date_resolution, message_resolution, message_suivi) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(query)) {
@@ -34,6 +34,7 @@ public class JdbcIncidentDao implements IIncidentDao {
             
             pstmt.setString(10, incident.getDateResolution() != null ? incident.getDateResolution().toString() : null);
             pstmt.setString(11, incident.getMessageResolution()  != null ? incident.getMessageResolution().toString() : null);
+            pstmt.setString(12, incident.getMessageSuivi() != null ? incident.getMessageSuivi().toString() : null);
             
             pstmt.executeUpdate();
         } catch (SQLException e) {
@@ -93,6 +94,8 @@ public class JdbcIncidentDao implements IIncidentDao {
                     }
                     
                     incident.setMessageResolution(rs.getString("message_resolution"));
+                    
+                    incident.setMessageSuivi(rs.getString("message_suivi"));
                     
                     incidents.add(incident);
                 }

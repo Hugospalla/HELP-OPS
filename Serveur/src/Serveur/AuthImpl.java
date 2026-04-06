@@ -32,11 +32,11 @@ public class AuthImpl extends UnicastRemoteObject implements IAuthService{
 			String token = UUID.randomUUID().toString();
 			sessionManager.createSession(token, user);
 			
-			System.out.println("AUTH >> Connexion réussi pour " + login + " Role: " + user.getRole());
+			System.out.println("AUTH >> Connexion réussie pour " + login + " Role: " + user.getRole());
 			return new AuthResponse(token, user.getLogin(), user.getRole());
 		}
 		
-		System.out.println("AUTH >> Echec connexion pour " + login);
+		System.out.println("AUTH >> Echec de connexion pour " + login);
 		throw new RemoteException("Identifiant ou mot de passe incorrect");
 	}
 	

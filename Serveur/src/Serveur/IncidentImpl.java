@@ -12,6 +12,7 @@ import java.rmi.Naming;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -97,10 +98,10 @@ public class IncidentImpl extends UnicastRemoteObject implements IIncidentServic
 				terminerModificationTicket();
 			}
 			
-			System.out.println("INC >> Creation d'un ticket [" + ticketId.substring(0,8) + "] pour : " + ticketAuteur);
+			System.out.println("INC >> Création d'un ticket [" + ticketId.substring(0,8) + "] pour : " + ticketAuteur);
 			return ticket;
 		} else {
-			throw new RemoteException("Votre session est invalide ou a expiré. Veuillez vous reconnecter");
+			throw new RemoteException("Votre session est invalide ou a expirée. Veuillez vous reconnecter");
 		}
 	}
 	
@@ -152,7 +153,7 @@ public class IncidentImpl extends UnicastRemoteObject implements IIncidentServic
 			Role roleDemandeur = auth.getRoleByToken(token);
 			
 			if (roleDemandeur != Role.AGENT) {
-				throw new RemoteException("Accès refusé : Seul un agent a le droit d'afficher tous les tickets");
+				throw new RemoteException("Accès refusé : Seul un agent a le droit d'afficher ses tickets en cours");
 			}
 			
 			String nomAgent = auth.getLoginByToken(token);
@@ -177,7 +178,7 @@ public class IncidentImpl extends UnicastRemoteObject implements IIncidentServic
 			return mesAssigned;
 			
 		} else {
-			throw new RemoteException("Session invalide ou expiré");
+			throw new RemoteException("Session invalide ou expirée");
 		}
 	}
 	
@@ -217,7 +218,7 @@ public class IncidentImpl extends UnicastRemoteObject implements IIncidentServic
 			return ouverts;
 			
 		} else {
-			throw new RemoteException("Session invalide ou expiré");
+			throw new RemoteException("Session invalide ou expirée");
 		}
 	}
 	
@@ -254,7 +255,7 @@ public class IncidentImpl extends UnicastRemoteObject implements IIncidentServic
 				
 				incidentDao.save(ticket);
 				supervision.notifierEvenement("[ASSIGNATION] Ticket '" + ticket.getTitre() + "' pris en charge par " + auth.getLoginByToken(token));
-				System.out.println("INC >> Ticket : " + idTicket + "assigné à " + ticket.getAgentId());
+				System.out.println("INC >> Ticket : " + idTicket + " assigné à " + ticket.getAgentId());
 			} catch (InterruptedException e) {
 				throw new RemoteException("Modification interrompue par le système", e);
 			} finally {
@@ -298,7 +299,7 @@ public class IncidentImpl extends UnicastRemoteObject implements IIncidentServic
 				}
 				
 				if (!nomDemandeur.equals(ticket.getAgentId())) {
-					throw new RemoteException("Vous ne pouvez pas résoudre un ticket qui n'est pas le votre");
+					throw new RemoteException("Vous ne pouvez pas résoudre un ticket qui n'est pas le vôtre");
 				}
 				
 				ticket.setDateResolution(LocalDateTime.now());
@@ -316,7 +317,7 @@ public class IncidentImpl extends UnicastRemoteObject implements IIncidentServic
 			
 			
 		} else {
-			throw new RemoteException("Session invalide ou expiré");
+			throw new RemoteException("Session invalide ou expirée");
 		}
 	}
 	@Override
@@ -345,6 +346,54 @@ public class IncidentImpl extends UnicastRemoteObject implements IIncidentServic
 		} else {
 			throw new RemoteException("Session invalide ou expirée");
 		}
+	}
+	
+	@Override
+	public void ajouterMessageSuivi(String token, String idTicket, String message) throws RemoteException {
+	    IAuthService auth = getAuth();
+	    if (auth == null) throw new RemoteException("Service d'authentification indisponible");
+	    
+	    if (auth.isTokenValid(token)) {
+	        Role roleDemandeur = auth.getRoleByToken(token);
+	        String loginAgent = auth.getLoginByToken(token);
+	        
+	        if (roleDemandeur != Role.AGENT) {
+	            throw new RemoteException("Seul un agent peut ajouter un message de suivi.");
+	        }
+	        
+	        Incident ticket;
+	        try {
+	            debuterModificationTicket(); 
+	            ticket = incidentDao.getIncidentsById(idTicket);
+	            
+	            if (ticket == null) throw new RemoteException("Le ticket n'existe pas");
+	            if (ticket.getEtat() != Etat.ASSIGNED) throw new RemoteException("Le ticket doit être en cours (ASSIGNED)");
+	            if (!loginAgent.equals(ticket.getAgentId())) throw new RemoteException("Ce ticket ne vous est pas assigné.");
+	            
+	            String dateDuJour = LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM HH:mm"));
+	            String noteTexte = " [" + dateDuJour + "] " + message;
+	            
+	            if (ticket.getMessageSuivi() == null || ticket.getMessageSuivi().isEmpty()) {
+	                ticket.setMessageSuivi(noteTexte);
+	            } else {
+	                ticket.setMessageSuivi(ticket.getMessageSuivi() + "\n" + noteTexte);
+	            }
+	            
+	            incidentDao.save(ticket);
+	            
+	        } catch (InterruptedException e) {
+	            throw new RemoteException("Modification interrompue", e);
+	        } finally {
+	            terminerModificationTicket();
+	        }
+	        
+	        try {
+	            supervision.notifierEvenement("[SUIVI] L'agent " + loginAgent + " a ajouté une note sur le ticket '" + ticket.getTitre() + "'");
+	        } catch (Exception e) {}
+	        
+	    } else {
+	        throw new RemoteException("Session invalide ou expirée");
+	    }
 	}
 }
 	
