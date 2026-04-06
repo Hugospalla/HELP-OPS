@@ -107,6 +107,9 @@ public class Incident implements Serializable{
 		this.messageSuivi = messageSuivi;
 	}
 	
+	public void setDateCreation(LocalDateTime dateCreation) {
+		this.dateCreation = dateCreation;
+	}
 	
 	@Override
     public String toString() {

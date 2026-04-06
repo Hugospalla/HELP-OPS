@@ -80,6 +80,11 @@ public class JdbcIncidentDao implements IIncidentDao {
                     incident.setEtat(Etat.valueOf(rs.getString("etat")));
                     incident.setAgentId(rs.getString("agent_id"));
                     
+                    String dateCreationStr = rs.getString("date_creation");
+                    if (dateCreationStr != null && !dateCreationStr.isEmpty() && !dateCreationStr.equals("null")) {
+                        incident.setDateCreation(LocalDateTime.parse(dateCreationStr));
+                    }
+                    
                     String dateAssignationStr = rs.getString("date_assignation");
                     if (dateAssignationStr != null && !dateAssignationStr.isEmpty() && !dateAssignationStr.equals("null")) {
                         incident.setDateAssignation(LocalDateTime.parse(dateAssignationStr));
