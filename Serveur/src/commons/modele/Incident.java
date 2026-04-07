@@ -118,6 +118,10 @@ public class Incident implements Serializable{
 		
         String chaine =  "[" + this.id.substring(0, 8) + "...] " + " | Date création: " + dateFormatee + " | Titre: "  + this.titre + " | Cat: " + this.categorie + " | Etat: " + this.etat +  " | Desc: " + this.desc + " | Auteur: " + this.auteur;
         
+        if (this.agentId != null && !this.agentId.isEmpty() && !this.agentId.equals("null")) {
+			chaine += (" | Admin en charge : ") + this.agentId;
+		}
+        
         if (this.etat == Etat.RESOLVED) {
 			if (this.dateResolution != null) {
 				String dateResoFormatee = this.dateResolution.format(formatter);
@@ -131,6 +135,8 @@ public class Incident implements Serializable{
         if (this.etat != Etat.RESOLVED && this.messageSuivi != null && !this.messageSuivi.isEmpty()) {
         	chaine += "\n - Message de suivi : " + this.messageSuivi;
         }
+        
+       
         
         return chaine;
     }
